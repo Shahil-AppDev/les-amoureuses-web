@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '../constants/theme';
 import { t } from '../lib/i18n';
 import { useApp } from '../context/AppContext';
@@ -12,6 +12,7 @@ export function AgeGate() {
     <Modal visible transparent animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.card}>
+          <Image source={require('../assets/images/logo-full.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Les Amoureuses" />
           <Text style={[styles.title, Platform.OS === 'web' && { fontFamily: fonts.displayWeb }]}>{d.legalAgeTitle}</Text>
           <Text style={styles.text}>{d.legalAgeText}</Text>
           <View style={styles.row}>
@@ -38,6 +39,7 @@ export function AgeGate() {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(20,15,10,0.75)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   card: { backgroundColor: colors.paper, padding: 36, maxWidth: 460, width: '100%', borderTopWidth: 3, borderTopColor: colors.terra },
+  logo: { width: 220, height: 110, alignSelf: 'center', marginBottom: 18 },
   title: { fontSize: 28, color: colors.ink, marginBottom: 12 },
   text: { fontSize: 15, lineHeight: 23, color: colors.inkSoft, marginBottom: 24 },
   row: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
