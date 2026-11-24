@@ -1,5 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { Platform } from 'react-native';
 import { storeApi, type StoreCart } from '../lib/store-api';
+import { SITE } from '../constants/theme';
+
+// La Store API est bloquée en CORS depuis un domaine tiers : on ne tente
+// l'appel que sur natif, ou sur web si l'app est servie en same-origin
+// (après la bascule DNS vers lesamoureuses.wine).
+export const storeApiReachable =
+  Platform.OS !== 'web' ||
+  (typeof window !== 'undefined' && window.location.origin === SITE.fr);
 
 interface CartState {
   cart: StoreCart | null;
@@ -34,7 +43,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(() => run(() => storeApi.getCart()), [run]);
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
+    if (storeApiReachable) refresh().finally(() => setLoading(false));
+    else setLoading(false);
   }, [refresh]);
 
   return (

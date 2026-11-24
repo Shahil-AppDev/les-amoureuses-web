@@ -8,7 +8,7 @@ export const POSTS: Post[] = [
   "image": "https://www.lesamoureuses.wine/wp-content/uploads/2026/11/02-MARCHE-DE-NOEL-AMOUREUSES-1.jpg"
  },
  {
-  "slug": "vendanges-2026-une-annee-precoce-genereuse-et-prometteuse-%f0%9f%8d%87",
+  "slug": "vendanges-2026-une-annee-precoce-genereuse-et-prometteuse",
   "date": "2026-10-02",
   "title": "Vendanges 2026 : une année précoce, généreuse et prometteuse !🍇",
   "excerpt": "Notre équipe revient sur cette fin de vendanges, pleines de promesses ! Les vendanges 2026 resteront comme une année particulièrement précoce, marquée par des températures élevées et un cycle de maturation accéléré. Malg",

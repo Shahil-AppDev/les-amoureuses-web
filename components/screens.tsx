@@ -10,8 +10,8 @@ import { decodeEntities } from '../lib/text';
 import type { Activity, Lang, Post, Product, Variation } from '../lib/types';
 import { PRODUCTS } from '../data/products';
 import { POSTS } from '../data/posts';
-import { storeApi } from '../lib/store-api';
-import { useCart } from '../context/CartContext';
+import { storeApi, hosted } from '../lib/store-api';
+import { storeApiReachable, useCart } from '../context/CartContext';
 import { WebShell, useRoutes } from './WebShell';
 import { CTAButton, Eyebrow, H1, H2, P, Section } from './ui';
 import { SeoHead, absUrl } from './SeoHead';
@@ -120,7 +120,9 @@ export function ShopScreen({ lang }: { lang: Lang }) {
   const [items, setItems] = useState<Product[]>(PRODUCTS);
 
   useEffect(() => {
-    // live refresh against WooCommerce (source of truth)
+    // live refresh against WooCommerce (source of truth) — ignoré si l'API
+    // n'est pas joignable en CORS depuis cette origine (préprod GH Pages).
+    if (!storeApiReachable) return;
     fetch(`${SITE.api}/wc/store/v1/products?per_page=100`)
       .then((r) => r.json())
       .then((list: any[]) => {
@@ -196,6 +198,7 @@ export function ProductScreen({ slug, lang }: { slug: string; lang: Lang }) {
 
   useEffect(() => {
     // Live refresh: price, stock and purchasability stay governed by WooCommerce
+    if (!storeApiReachable) return;
     storeApi.getProduct(slug).then((p) => {
       if (!p) return;
       setProduct((prev) => prev ? {
@@ -209,7 +212,7 @@ export function ProductScreen({ slug, lang }: { slug: string; lang: Lang }) {
   }, [slug]);
 
   useEffect(() => {
-    if (!product?.variationIds.length) return;
+    if (!product?.variationIds.length || !storeApiReachable) return;
     Promise.all(product.variationIds.map((id) => storeApi.getVariation(id).catch(() => null)))
       .then((vs) => {
         const ok = vs.filter(Boolean) as Variation[];
@@ -233,6 +236,12 @@ export function ProductScreen({ slug, lang }: { slug: string; lang: Lang }) {
   const doAdd = async () => {
     setAdding(true);
     try {
+      if (!storeApiReachable) {
+        // Store API bloquée en CORS cross-origin : transfert du panier vers le
+        // parcours WooCommerce hébergé (paybox conservé côté domaine).
+        window.location.href = hosted.addToCart(product.id, 1, variation?.id);
+        return;
+      }
       await add(product.id, 1, variation?.id);
       setAdded(true);
       setTimeout(() => setAdded(false), 2200);
@@ -319,7 +328,13 @@ export function CartScreen({ lang }: { lang: Lang }) {
         <H1>{d.cartTitle}</H1>
         {loading && <ActivityIndicator color={colors.terra} style={{ marginTop: 24 }} />}
         {error && <P style={{ marginTop: 16, color: colors.error }}>{error}</P>}
-        {!loading && (!cart || cart.itemsCount === 0) && !error && (
+        {!storeApiReachable ? (
+          <View style={{ marginTop: 24, gap: 16 }}>
+            <P>{d.cartHosted}</P>
+            <CTAButton label={d.cartHostedCta} onPress={() => { window.location.href = hosted.cart; }} />
+            <CTAButton href={r.shop} label={d.cartEmptyCta} primary={false} />
+          </View>
+        ) : !loading && (!cart || cart.itemsCount === 0) && !error && (
           <View style={{ marginTop: 24, gap: 16 }}>
             <P>{d.cartEmpty}</P>
             <CTAButton href={r.shop} label={d.cartEmptyCta} />
@@ -391,7 +406,12 @@ export function CheckoutScreen({ lang }: { lang: Lang }) {
       <Section style={{ maxWidth: 640 }}>
         <H1>{d.checkoutTitle}</H1>
         <P style={{ marginVertical: 14 }}>{d.checkoutIntro}</P>
-        {(!cart || cart.itemsCount === 0) ? (
+        {!storeApiReachable ? (
+          <View style={{ gap: 16 }}>
+            <P>{d.checkoutHosted}</P>
+            <CTAButton label={d.checkoutHostedCta} onPress={() => { window.location.href = hosted.checkout; }} />
+          </View>
+        ) : (!cart || cart.itemsCount === 0) ? (
           <CTAButton href={lang === 'en' ? '/en/shop/' : '/vins/'} label={d.cartEmptyCta} />
         ) : state === 'processing' ? (
           <View style={{ gap: 12 }}>
@@ -522,6 +542,15 @@ export function QuoteForm({ lang, subject }: { lang: Lang; subject: string }) {
 
   const send = async () => {
     setStatus('sending');
+    if (!storeApiReachable) {
+      // CF7 bloqué en CORS depuis la préprod : repli mailto (reste à valider
+      // la réception réelle — voir PR, scénario « formulaire événement »).
+      const subject = encodeURIComponent(form.subject);
+      const bodyMail = encodeURIComponent(`${form.message}\n\n— ${form.name} (${form.email})`);
+      window.location.href = `mailto:contact@lesamoureuses.wine?subject=${subject}&body=${bodyMail}`;
+      setStatus('ok');
+      return;
+    }
     try {
       const body = new FormData();
       body.append('your-name', form.name);
@@ -646,6 +675,7 @@ export function PostScreen({ slug, lang }: { slug: string; lang: Lang }) {
   const post = POSTS.find((p) => p.slug === slug);
   const [html, setHtml] = useState<string | null>(null);
   useEffect(() => {
+    if (!storeApiReachable) return;
     fetch(`${SITE.api}/wp/v2/posts?slug=${slug}&_fields=content,title`)
       .then((r) => r.json())
       .then((list) => setHtml(list?.[0]?.content?.rendered ?? null))

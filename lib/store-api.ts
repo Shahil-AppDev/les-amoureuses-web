@@ -4,6 +4,16 @@ import type { CartItem, Variation } from './types';
 
 const BASE = `${SITE.api}/wc/store/v1`;
 
+// La Store API est bloquée en CORS cross-origin côté navigateur (ACAO absent des
+// réponses GET/POST). Sur web, le parcours hébergé WooCommerce reste la voie de
+// secours officielle : add-to-cart GET + panier/checkout hébergés (Paybox).
+export const hosted = {
+  addToCart: (productId: number, quantity = 1, variationId?: number) =>
+    `${SITE.fr}/?add-to-cart=${variationId ?? productId}&quantity=${quantity}`,
+  cart: `${SITE.fr}/panier/`,
+  checkout: `${SITE.fr}/commande/`,
+};
+
 const storage = {
   get(key: string): string | null {
     if (Platform.OS === 'web' && typeof localStorage !== 'undefined') return localStorage.getItem(key);
