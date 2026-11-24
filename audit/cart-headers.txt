@@ -1,0 +1,24 @@
+HTTP/1.1 200 OK
+Server: nginx
+Date: Tue, 24 Nov 2026 22:13:32 GMT
+Content-Type: application/json; charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+X-Robots-Tag: noindex
+Link: <https://www.lesamoureuses.wine/wp-json/>; rel="https://api.w.org/"
+X-Content-Type-Options: nosniff
+Access-Control-Expose-Headers: X-WP-Total, X-WP-TotalPages, Link, Cart-Token
+Access-Control-Allow-Headers: Authorization, X-WP-Nonce, Content-Disposition, Content-MD5, Content-Type, Cart-Token, Nonce
+Nonce: 31378aaf55
+Nonce-Timestamp: 1795558412
+User-ID: 0
+Cache-Control: no-store
+Cart-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidF84YjRkOGQ2MTY5NzFkMmFmYTNjODdiZjQ5MmIxODMiLCJleHAiOjE3OTU3MzEyMTIsImlzcyI6InN0b3JlLWFwaSIsImlhdCI6MTc5NTU1ODQxMn0.maZmQ9uESE4mDeTUoIcPQcnvOOUxJnoyGGavKJAEF8g
+Cart-Hash: 
+Allow: GET
+Access-Control-Allow-Methods: OPTIONS, GET, POST, PUT, PATCH, DELETE
+Access-Control-Allow-Credentials: true
+Vary: Origin,User-Agent
+Cache-Control: max-age=7200
+Expires: Wed, 25 Nov 2026 00:13:32 GMT
+
