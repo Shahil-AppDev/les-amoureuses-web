@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Link, usePathname } from 'expo-router';
 import { colors, fonts } from '../constants/theme';
 import { t } from '../lib/i18n';
@@ -34,13 +34,15 @@ export function useRoutes() {
 
 function Logo({ lang }: { lang: Lang }) {
   return (
-    <Link href={ROUTES[lang].home as any}>
-      <Text style={styles.logo}>
-        <Text style={{ fontSize: 13, letterSpacing: 4 }}>DOMAINE{'\n'}</Text>
-        <Text style={{ fontSize: 26, letterSpacing: 3, color: colors.terra }}>LES AMOUREUSES</Text>
-        {'\n'}
-        <Text style={{ fontSize: 10, letterSpacing: 6, color: colors.gold }}>ARDÈCHE</Text>
-      </Text>
+    <Link href={ROUTES[lang].home as any} asChild>
+      <Pressable style={styles.logoRow}>
+        <Image source={require('../assets/images/medallion.png')} style={styles.logoMark} resizeMode="contain" accessibilityLabel="Domaine Les Amoureuses" />
+        <Text style={styles.logo}>
+          <Text style={{ fontSize: 20, letterSpacing: 2.5, color: colors.terra }}>LES AMOUREUSES</Text>
+          {'\n'}
+          <Text style={{ fontSize: 9, letterSpacing: 5, color: colors.gold }}>ARDÈCHE</Text>
+        </Text>
+      </Pressable>
     </Link>
   );
 }
@@ -132,6 +134,7 @@ export function WebShell({ children, lang }: { children: React.ReactNode; lang: 
       <ScrollView style={styles.scroll} contentContainerStyle={{ flexGrow: 1 }}>
         {children}
         <View style={styles.footer}>
+          <Image source={require('../assets/images/medallion.png')} style={styles.footerMark} resizeMode="contain" />
           <Text style={styles.footerBrand}>DOMAINE LES AMOUREUSES</Text>
           <Text style={styles.footerText}>1429 Chemin de Vinsas{'\n'}07700 Bourg-Saint-Andéol{'\n'}+33 (0)4 75 54 51 85 · contact@lesamoureuses.wine</Text>
           <View style={styles.footerLinks}>
@@ -156,6 +159,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: colors.line,
     ...(isWeb ? ({ position: 'sticky', top: 0, zIndex: 50 } as any) : {}),
   },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoMark: { width: 46, height: 46 },
+  footerMark: { width: 64, height: 64, alignSelf: 'center', marginBottom: 10 },
   logo: { textAlign: 'left', color: colors.ink, lineHeight: 20, ...(isWeb ? { fontFamily: fonts.displayWeb } : {}) },
   nav: { flexDirection: 'row', gap: 20, flexWrap: 'wrap', ...(Platform.OS === 'web' ? {} : { display: 'none' }) },
   navLink: { paddingVertical: 6 },
