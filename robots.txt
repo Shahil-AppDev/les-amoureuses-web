@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# Préproduction : non indexable. Remplacer par le sitemap canonique à la bascule.
