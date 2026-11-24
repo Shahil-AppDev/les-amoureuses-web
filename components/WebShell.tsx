@@ -15,6 +15,7 @@ const ROUTES = {
     cart: '/panier/', legal: '/mentions-legales/', account: '/mon-compte/',
     identity: '/notre-identite/', sens: '/le-sens/', places: '/les-lieux/',
     r1: '/les-vins-terres-des-amoureuses/', r2: '/les-vins-le-liby/', r3: '/les-vins-chateau-les-amoureuses/',
+    sommelier: '/trouver-ma-cuvee/', visit: '/preparer-ma-visite/',
   },
   en: {
     home: '/en/', shop: '/en/shop/', oeno: '/en/our-services/', priva: '/privatisation-du-domaine-les-amoureuses/',
@@ -22,6 +23,7 @@ const ROUTES = {
     cart: '/en/cart/', legal: '/en/mentions-legales-cgv/', account: '/en/my-account/',
     identity: '/en/notre-identite/', sens: '/en/le-sens/', places: '/en/les-lieux/',
     r1: '/en/les-vins-terres-des-amoureuses/', r2: '/en/les-vins-le-liby/', r3: '/en/les-vins-chateau-les-amoureuses/',
+    sommelier: '/en/find-my-wine/', visit: '/en/plan-my-visit/',
   },
 } as const;
 
@@ -51,6 +53,11 @@ export function LangSwitch() {
   if (target === '/en/vins/' || target === '/en/vins') target = '/en/shop/';
   if (target === '/en/cart/' || target === '/en/panier/') target = '/en/cart/';
   if (isEn && (pathname === '/en/shop/' || pathname === '/en/shop')) target = '/vins/';
+  // L'assistant a des slugs différents par langue
+  if (isEn && pathname.startsWith('/en/find-my-wine')) target = '/trouver-ma-cuvee/';
+  if (isEn && pathname.startsWith('/en/plan-my-visit')) target = '/preparer-ma-visite/';
+  if (!isEn && pathname.startsWith('/trouver-ma-cuvee')) target = '/en/find-my-wine/';
+  if (!isEn && pathname.startsWith('/preparer-ma-visite')) target = '/en/plan-my-visit/';
   return (
     <View style={styles.langRow}>
       <Link href={target as any}><Text style={[styles.langItem, !isEn && styles.langActive]}>FR</Text></Link>
@@ -77,6 +84,7 @@ export function WebShell({ children, lang }: { children: React.ReactNode; lang: 
     { href: r.home, label: d.navHome },
     { href: r.identity, label: d.navIdentity },
     { href: r.shop, label: d.navShop },
+    { href: r.sommelier, label: d.navSommelier },
     { href: r.oeno, label: d.navOeno },
     { href: r.news, label: d.navNews },
     { href: r.priva, label: d.navPriva },
@@ -112,7 +120,7 @@ export function WebShell({ children, lang }: { children: React.ReactNode; lang: 
       </View>
       {menuOpen && (
         <View style={styles.mobileMenu}>
-          {[...links, { href: r.press, label: d.navPress }, { href: r.account, label: d.account }].map((l) => (
+          {[...links, { href: r.visit, label: d.homeAssVisit }, { href: r.press, label: d.navPress }, { href: r.account, label: d.account }].map((l) => (
             <Link key={l.href} href={l.href as any} asChild>
               <Pressable style={styles.mobileItem} onPress={() => setMenuOpen(false)}>
                 <Text style={styles.mobileText}>{l.label}</Text>

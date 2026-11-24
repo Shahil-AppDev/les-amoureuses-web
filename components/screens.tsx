@@ -17,6 +17,7 @@ import { CTAButton, Eyebrow, H1, H2, P, Section } from './ui';
 import { SeoHead, absUrl } from './SeoHead';
 import { ProductCard } from './ProductCard';
 import { EllohaButton } from './EllohaWidget';
+import { ACTIVITIES } from '../data/visites';
 import { HtmlContent } from './HtmlContent';
 import Bottle3D from './Bottle3D';
 
@@ -85,6 +86,29 @@ export function HomeScreen({ lang }: { lang: Lang }) {
               </Pressable>
             </Link>
           ))}
+        </View>
+      </Section>
+
+      {/* Sommelier virtuel : deux entrées */}
+      <Section style={{ backgroundColor: colors.paper, maxWidth: '100%' }}>
+        <View style={{ maxWidth: 1080, width: '100%', alignSelf: 'center' }}>
+          <Eyebrow>{lang === 'fr' ? 'Assistant' : 'Assistant'}</Eyebrow>
+          <H2>{d.homeAssTitle}</H2>
+          <P style={{ marginTop: 10, maxWidth: 620 }}>{d.homeAssText}</P>
+          <View style={[styles.rangeRow, { marginTop: 20 }]}>
+            {[
+              { title: d.homeAssVin, text: d.homeAssVinText, href: r.sommelier },
+              { title: d.homeAssVisit, text: d.homeAssVisitText, href: r.visit },
+            ].map((c) => (
+              <Link key={c.href} href={c.href as any} asChild>
+                <Pressable style={styles.assCard}>
+                  <Text style={[styles.assTitle, serif]}>{c.title}</Text>
+                  <P style={{ fontSize: 14, marginTop: 6 }}>{c.text}</P>
+                  <Text style={styles.assGo}>→</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
         </View>
       </Section>
 
@@ -186,7 +210,7 @@ export function ShopScreen({ lang }: { lang: Lang }) {
 
 /* --------------------------------- Product -------------------------------- */
 
-export function ProductScreen({ slug, lang }: { slug: string; lang: Lang }) {
+export function ProductScreen({ slug, lang, initialViewer }: { slug: string; lang: Lang; initialViewer?: boolean }) {
   const d = t(lang);
   const { add } = useCart();
   const [product, setProduct] = useState<Product | null>(() => PRODUCTS.find((p) => p.slug === slug) ?? null);
@@ -194,7 +218,7 @@ export function ProductScreen({ slug, lang }: { slug: string; lang: Lang }) {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
-  const [show3d, setShow3d] = useState(false);
+  const [show3d, setShow3d] = useState(!!initialViewer);
 
   useEffect(() => {
     // Live refresh: price, stock and purchasability stay governed by WooCommerce
@@ -448,44 +472,7 @@ export function CheckoutScreen({ lang }: { lang: Lang }) {
 
 /* -------------------------------- Oenotourism ------------------------------ */
 
-export const ACTIVITIES: Activity[] = [
-  {
-    id: 'd02ed4e6-ce00-433b-a314-817471da5f1e',
-    titleFr: 'Visite de la Cave & Dégustation de la Gamme Complète',
-    titleEn: 'Cellar Tour & Full Range Tasting',
-    descFr: "Visite guidée de la cave : vinification, élevage en barriques et amphores, dégustation commentée de l'ensemble de la gamme.",
-    descEn: 'Guided cellar tour: winemaking, barrel and amphora ageing, guided tasting of the full range.',
-    duration: '1h30', priceFrom: 10,
-    ellohaId: 'd02ed4e6-ce00-433b-a314-817471da5f1e',
-  },
-  {
-    id: '3e4bb70f-5719-433e-8cf8-c6deffa8115d',
-    titleFr: 'Visite & dégustation sur amphores et barriques',
-    titleEn: 'Amphorae & Barrels Tour & Tasting',
-    descFr: "Comprenez l'influence des élevages : dégustation comparative de vins élevés en amphores et barriques.",
-    descEn: 'Understand the influence of ageing vessels: comparative tasting of amphora- and barrel-aged wines.',
-    duration: '2h', priceFrom: 30,
-    ellohaId: '3e4bb70f-5719-433e-8cf8-c6deffa8115d',
-  },
-  {
-    id: '5e482345-c0ae-4940-b83e-9ce477f16eee',
-    titleFr: 'Accords Mets & Vins — Version Été',
-    titleEn: 'Food & Wine Pairing — Summer',
-    descFr: 'Visite, dégustation de cuvées estivales puis repas convivial en extérieur autour du brasero.',
-    descEn: 'Tour, tasting of summer cuvées then an outdoor convivial meal around the brasero.',
-    priceFrom: 80,
-    ellohaId: '5e482345-c0ae-4940-b83e-9ce477f16eee',
-  },
-  {
-    id: '91dc66e6-c338-4904-b9da-27c42d5f98a8',
-    titleFr: 'Accords Mets & Vins — Version Hiver',
-    titleEn: 'Food & Wine Pairing — Winter',
-    descFr: 'Visite guidée, dégustation approfondie et mets de saison en salle de séminaire.',
-    descEn: 'Guided tour, in-depth tasting and seasonal dishes in the seminar room.',
-    priceFrom: 55,
-    ellohaId: '91dc66e6-c338-4904-b9da-27c42d5f98a8',
-  },
-];
+export { ACTIVITIES };
 
 export function OenoScreen({ lang }: { lang: Lang }) {
   const d = t(lang);
@@ -713,6 +700,9 @@ const styles = StyleSheet.create({
   band: { borderTopWidth: 1, borderTopColor: colors.line },
   rangeRow: { flexDirection: 'row', gap: 16, flexWrap: 'wrap', marginTop: 8 },
   rangeCard: { width: 220, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, padding: 18, alignItems: 'center' },
+  assCard: { width: 300, maxWidth: '100%', backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line, padding: 22 },
+  assTitle: { fontSize: 22, color: colors.ink },
+  assGo: { fontSize: 22, color: colors.terra, marginTop: 10 },
   rangeImg: { width: '100%', height: 160 },
   rangeName: { fontSize: 18, color: colors.ink, textAlign: 'center', marginTop: 8 },
   chipRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 8 },

@@ -8,6 +8,6 @@ export function generateStaticParams() {
 }
 
 export default function Product() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
-  return <ProductScreen slug={slug} lang="fr" />;
+  const { slug, viewer } = useLocalSearchParams<{ slug: string; viewer?: string }>();
+  return <ProductScreen slug={slug} lang="fr" initialViewer={viewer === "1"} />;
 }
