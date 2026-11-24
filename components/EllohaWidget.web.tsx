@@ -1,46 +1,26 @@
-import React, { useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import React from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { colors } from '../constants/theme';
 
-const LOADER = 'https://reservation.elloha.com/Scripts/widget-loader.min.js?v=42';
-let loaderPromise: Promise<void> | null = null;
-
-function ensureLoader() {
-  if (!loaderPromise) {
-    loaderPromise = new Promise((resolve, reject) => {
-      if ((window as any).constellationBookingButtonLoad) return resolve();
-      const s = document.createElement('script');
-      s.src = LOADER;
-      s.async = true;
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error('Elloha loader failed'));
-      document.body.appendChild(s);
-    });
-  }
-  return loaderPromise;
-}
-
-// Reproduces the elloha widget embed used on lesamoureuses.wine/oenotourisme
-export function EllohaButton({ widgetId, idoi = '190471b7-b0ac-490e-b45e-66c74649caec', culture = 'fr-FR' }: {
+// Ouvre le calendrier officiel Elloha du domaine dans un nouvel onglet.
+// (La reproduction du widget JS embarqué générait des erreurs réseau dans son
+// loader ; le lien direct est le comportement de repli fiable, identique à la
+// version native.)
+export function EllohaButton({ widgetId, idoi = '190471b7-b0ac-490e-b45e-66c74649caec', culture = 'fr-FR', label = 'Réserver' }: {
   widgetId: string;
   idoi?: string;
   culture?: string;
+  label?: string;
 }) {
-  const containerId = `ConstellationButtonContainer${widgetId}`;
-  const suffix = widgetId.replace(/-/g, '');
-  const mounted = useRef(false);
-
-  useEffect(() => {
-    if (mounted.current) return;
-    mounted.current = true;
-    ensureLoader()
-      .then(() => {
-        (window as any)[`constellationWidgetUrl${suffix}`] =
-          `https://reservation.elloha.com/Widget/BookingButton/${widgetId}?idoi=${idoi}&culture=${culture}`;
-        (window as any)[`constellationTypeModule${suffix}`] = 3;
-        (window as any).constellationBookingButtonLoad?.(containerId);
-      })
-      .catch(() => {});
-  }, [widgetId]);
-
-  return <View nativeID={containerId} style={{ minHeight: 46 }} />;
+  const url = `https://reservation.elloha.com/Widget/BookingButton/${widgetId}?idoi=${idoi}&culture=${culture}`;
+  return (
+    <Pressable style={styles.btn} onPress={() => window.open(url, '_blank', 'noopener')}>
+      <Text style={styles.text}>{label}</Text>
+    </Pressable>
+  );
 }
+
+const styles = StyleSheet.create({
+  btn: { backgroundColor: colors.terra, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 2, alignSelf: 'flex-start' },
+  text: { color: colors.paper, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' },
+});
