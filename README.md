@@ -1,50 +1,78 @@
-# Welcome to your Expo app 👋
+# Domaine Les Amoureuses — refonte web/PWA/native
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Application universelle (Expo SDK 54, Expo Router 6, React Native 0.81, TypeScript)
+pour le Domaine Les Amoureuses : site vitrine + boutique + œnotourisme, publiée en
+web statique (PWA installable) et compilable en natif Android/iOS.
 
-## Get started
+- **Préproduction** : https://shahil-appdev.github.io/les-amoureuses-web/
+- **Backend e-commerce** (source de vérité prix/stocks/commandes) : WooCommerce sur
+  https://www.lesamoureuses.wine — paiement Paybox hébergé.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Lancer le projet
 
 ```bash
-npm run reset-project
+npm install
+npx expo start        # Metro : natif (Expo Go / émulateur) + web dev
+npx tsc --noEmit      # typecheck
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Build web statique (préproduction)
 
-## Learn more
+```bash
+npx expo export -p web   # génère dist/ (HTML pré-rendu par route)
+node scripts/postexport.js   # .html → index.html en arborescence, sitemap.xml, .nojekyll, patchs
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Le site est servi sous le sous-chemin `/les-amoureuses-web` (cf. `experiments.baseUrl`
+dans `app.json`). Pour un test local :
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+mkdir -p .preview/les-amoureuses-web && cp -r dist/* .preview/les-amoureuses-web/
+npx serve .preview   # http://localhost:PORT/les-amoureuses-web/
+```
 
-## Join the community
+### Déploiement GitHub Pages
 
-Join our community of developers creating universal apps.
+Le site est publié depuis la branche `gh-pages` (worktree dédié `../gh-pages-deploy`) :
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+cd ../gh-pages-deploy && git rm -rf --quiet .
+cp -r "../Les Amoureuses/dist/"* . && cp "../Les Amoureuses/dist/.nojekyll" .
+git add -A && git commit -m "Deploy" && git push origin gh-pages
+```
+
+⚠️ `.nojekyll` doit être copié explicitement (le glob `*` ignore les dotfiles) —
+sinon `_expo/` n'est pas servi et le bundle JS 404.
+
+## Mettre à jour les contenus
+
+| Contenu | Fichier | Notes |
+|---|---|---|
+| Catalogue (noms, prix affichés en fallback, images, gammes) | `data/products.ts` | Snapshot statique ; sur natif ou en same-origin, prix/stocks sont rafraîchis en direct depuis la Store API WooCommerce |
+| Descriptions produits | `data/products.ts` (`description`) | Reprise des métas Yoast du site actuel |
+| Articles d'actualités | `data/posts.ts` (slug, date, titre, extrait, image) | Le corps HTML est chargé depuis WP en same-origin ; sinon extrait affiché |
+| Textes FR/EN | `lib/i18n.ts` | Tous les libellés d'interface |
+| Thème (couleurs, typo) | `constants/theme.ts` | crème `#F5EFE4`, encre `#23201C`, terre cuite `#A8502E` |
+| Slugs/URLs produits | `data/products.ts` + route dynamique `app/vins/[slug].tsx` | URLs conservées à l'identique du site actuel |
+
+Après toute modification : `npx expo export -p web && node scripts/postexport.js`, puis redéployer.
+
+## Architecture
+
+- `app/` — routes Expo Router (FR à la racine, EN sous `/en/`, URLs conservées du site WordPress)
+- `components/screens.tsx` — écrans partagés (accueil, boutique, fiche, panier, checkout, œnotourisme, privatisation…)
+- `components/Bottle3D.web.tsx` / `Bottle3D.tsx` — bouteille 3D web (R3F) / fallback statique natif ⚠️ **modèle procédural provisoire**, à remplacer par le GLB validé par le domaine
+- `lib/store-api.ts` — client Store API WooCommerce + helpers de checkout hébergé (`hosted.addToCart/cart/checkout`)
+- `context/CartContext.tsx` — panier ; `storeApiReachable` décide Store API directe (natif / same-origin) ou repli hébergé (web cross-origin, cf. section CORS dans la PR)
+- `components/WebShell.tsx` — header/footer/nav + age gate
+- `public/` — manifeste PWA, icônes, service worker (cache statique uniquement ; panier/compte/paiement/réservation exclus)
+
+## Panier & paiement — fonctionnement
+
+- **Web en préproduction (github.io)** : ajout au panier → navigation vers
+  `lesamoureuses.wine/?add-to-cart=<id>&quantity=<n>` puis panier/commande hébergés
+  WooCommerce (paiement Paybox). Testé de bout en bout.
+- **Natif** : Store API complète (panier applicatif, checkout API + redirection Paybox).
+- **Après bascule DNS** (l'app servie sur lesamoureuses.wine, même origine) : la Store API
+  devient joignable en CORS et le panier applicatif s'active automatiquement
+  (`storeApiReachable`), sans changement de code.
