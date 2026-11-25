@@ -19,13 +19,17 @@ export default function Root({ children }: { children: React.ReactNode }) {
             document.head.appendChild(m);
           })();
         `}} />
-        <meta name="theme-color" content="#A8502E" />
+        <meta name="theme-color" content="#24251E" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: `
-          body { background: #F5EFE4; }
+          body { background: #F4EFE5; }
+          a:focus-visible, button:focus-visible, [role="button"]:focus-visible {
+            outline: 2px solid #B26F4B;
+            outline-offset: 3px;
+          }
           @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
           }

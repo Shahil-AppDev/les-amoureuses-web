@@ -31,16 +31,18 @@ export function ProductCard({ product, lang }: { product: Product; lang: Lang })
 
 const styles = StyleSheet.create({
   card: {
-    width: Platform.OS === 'web' ? 250 : '46%',
+    flexBasis: '22%',
+    flexGrow: 1,
+    maxWidth: 278,
+    minWidth: 128,
     backgroundColor: colors.paper,
     borderWidth: 1,
     borderColor: colors.line,
-    padding: 16,
-    borderRadius: 2,
+    padding: 12,
   },
-  imgWrap: { height: 220, alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 },
+  imgWrap: { height: 184, backgroundColor: '#ece4d6', padding: 12, alignItems: 'center', justifyContent: 'flex-end', marginBottom: 12 },
   img: { width: '100%', height: '100%' },
-  name: { fontSize: 17, color: colors.ink, minHeight: 44, ...(Platform.OS === 'web' ? { fontFamily: fonts.displayWeb } : {}) },
+  name: { fontSize: 21, lineHeight: 24, color: colors.ink, minHeight: 48, ...(Platform.OS === 'web' ? { fontFamily: fonts.displayWeb } : {}) },
   price: { fontSize: 15, color: colors.terra, fontWeight: '600', marginTop: 4 },
   stock: { fontSize: 12, color: colors.error, marginTop: 4 },
   cta: { fontSize: 12, color: colors.inkSoft, letterSpacing: 1, marginTop: 10, textTransform: 'uppercase' },

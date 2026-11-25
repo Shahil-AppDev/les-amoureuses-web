@@ -1,10 +1,10 @@
 export const colors = {
-  cream: '#F5EFE4',
-  paper: '#FBF7EF',
-  ink: '#26211A',
+  cream: '#F4EFE5',
+  paper: '#FCF8EF',
+  ink: '#24251E',
   inkSoft: '#5B5245',
-  terra: '#A8502E',
-  terraDeep: '#7C3E26',
+  terra: '#8A3D37',
+  terraDeep: '#672A2A',
   gold: '#B9975B',
   line: '#E3D8C6',
   white: '#FFFFFF',
@@ -17,7 +17,7 @@ export const fonts = {
   body: 'Jost',
   // web stacks fallback
   displayWeb: `'Cormorant Garamond', 'Georgia', serif`,
-  bodyWeb: `'Jost', 'Helvetica Neue', Arial, sans-serif`,
+  bodyWeb: `'DM Sans', sans-serif`,
 };
 
 export const spacing = (n: number) => n * 4;

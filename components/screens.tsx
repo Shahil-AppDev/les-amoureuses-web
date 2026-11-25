@@ -20,7 +20,7 @@ import { EllohaButton } from './EllohaWidget';
 import { ACTIVITIES } from '../data/visites';
 import { HtmlContent } from './HtmlContent';
 import Bottle3D from './Bottle3D';
-import { Enter, Float, GlowPulse, HeroBackdrop, Hoverable, Reveal, StaggerLine } from './motionfx';
+import { Enter } from './motionfx';
 
 const serif = Platform.OS === 'web' ? { fontFamily: fonts.displayWeb } : {};
 const FLAGSHIP = 'cuvee-a';
@@ -34,7 +34,7 @@ export function HomeScreen({ lang }: { lang: Lang }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const wide = mounted && width > 860;
-  const flagship = PRODUCTS.find((p) => p.slug === FLAGSHIP) ?? PRODUCTS[0];
+  const fr = lang === 'fr';
 
   return (
     <WebShell lang={lang}>
@@ -51,123 +51,99 @@ export function HomeScreen({ lang }: { lang: Lang }) {
           address: { '@type': 'PostalAddress', streetAddress: '1429 Chemin de Vinsas', postalCode: '07700', addressLocality: 'Bourg-Saint-Andéol', addressCountry: 'FR' },
         }}
       />
-      {/* Hero : fond encre→bordeaux, titre cinématique, bouteille 3D en lévitation */}
-      <View style={styles.heroDark}>
-        <HeroBackdrop />
-        <View style={[styles.heroInner, { flexDirection: wide ? 'row' : 'column' }]}>
-          <View style={[styles.heroText, !wide && { paddingTop: 40 }]}>
-            <StaggerLine index={0}>
-              <Eyebrow style={{ color: colors.gold, letterSpacing: 4 }}>{d.heroSub}</Eyebrow>
-            </StaggerLine>
-            <StaggerLine index={1}>
-              <H1 style={[styles.heroTitle, { fontSize: wide ? 76 : 44, lineHeight: wide ? 80 : 48 }]}>{d.heroTitle}</H1>
-            </StaggerLine>
-            <StaggerLine index={2}>
-              <P style={{ marginTop: 18, maxWidth: 520, color: 'rgba(245,239,228,0.82)', fontSize: 17, lineHeight: 28 }}>{d.heroText}</P>
-            </StaggerLine>
-            <StaggerLine index={3}>
-              <View style={styles.ctaRow}>
-                <CTAButton href={r.shop} label={d.ctaWines} />
-                <CTAButton href={r.oeno} label={d.ctaVisit} primary={false} inverted />
-              </View>
-            </StaggerLine>
+      <View style={[styles.masthead, wide && styles.editorialRow]}>
+        <View style={[styles.mastCopy, wide && styles.mastCopyWide]}>
+          <View>
+            <Eyebrow style={styles.mastKicker}>{fr ? '01 / Le domaine · Ardèche' : '01 / The estate · Ardèche'}</Eyebrow>
+            <H1 style={[styles.mastTitle, wide && styles.mastTitleWide]}>
+              {fr ? 'Une terre.' : 'One land.'}{'\n'}
+              <Text style={styles.mastItalic}>{fr ? 'Des vins libres.' : 'Wines untamed.'}</Text>
+            </H1>
+            <P style={styles.mastDescription}>
+              {fr ? 'À Bourg-Saint-Andéol, Les Amoureuses cultivent des vins biologiques et biodynamiques, libres d’exprimer leur terroir.' : 'In Bourg-Saint-Andéol, Les Amoureuses makes organic and biodynamic wines that speak freely of their terroir.'}
+            </P>
+            <View style={styles.ctaRow}>
+              <CTAButton href={r.shop} label={d.ctaWines} />
+              <CTAButton href={r.oeno} label={d.ctaVisit} primary={false} inverted />
+            </View>
           </View>
-          <View style={[styles.heroBottle, { height: wide ? 600 : 440 }]}>
-            <Enter delay={0.5} y={0} duration={1.4} style={{ width: '100%', height: '100%' }}>
-              <View style={{ width: '100%', height: '100%' }}>
-                <View style={styles.heroMedalWrap} pointerEvents="none">
-                  <GlowPulse />
-                  <Image source={require('../assets/images/medallion.png')} style={styles.heroMedal} resizeMode="contain" />
-                </View>
-                <Float amplitude={12} duration={6} style={{ width: '100%', height: '100%' }}>
-                  {Platform.OS === 'web' ? (
-                    <Bottle3D image={flagship.image} label="Cuvée « A »" interactive />
-                  ) : (
-                    flagship.image && <Image source={{ uri: flagship.image }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-                  )}
-                </Float>
-              </View>
-            </Enter>
-          </View>
+          <Text style={styles.mastNote}>{fr ? 'VIGNERONS EN ARDÈCHE · FRANCE' : 'WINEMAKERS IN ARDÈCHE · FRANCE'}</Text>
+        </View>
+        <View style={[styles.mastPhoto, wide && styles.mastPhotoWide]}>
+          <Enter y={0} duration={0.45} style={{ width: '100%', height: '100%' }}>
+            <Image source={require('../assets/images/estate-cover.jpg')} style={styles.cover} resizeMode="cover" />
+          </Enter>
+          <Text style={styles.photoCaption}>{fr ? 'FIG. 01  /  DANS LES VIGNES' : 'FIG. 01  /  IN THE VINEYARD'}</Text>
         </View>
       </View>
 
-      {/* Gammes */}
       <Section>
-        <Reveal>
-          <Eyebrow>{d.ranges}</Eyebrow>
-        </Reveal>
-        <View style={styles.rangeRow}>
+        <View style={[styles.collectionHeader, wide && styles.editorialRow]}>
+          <View>
+            <Eyebrow>{fr ? '02 / La collection' : '02 / The collection'}</Eyebrow>
+            <H2>{fr ? 'Trois expressions du domaine.' : 'Three expressions of the estate.'}</H2>
+          </View>
+          <CTAButton href={r.shop} label={d.shopNow} primary={false} />
+        </View>
+        <View style={[styles.rangeRow, wide && styles.editorialRow]}>
           {[
-            { name: d.rangeTerres, href: r.r1, img: PRODUCTS.find(p => p.slug === 'cuvee-a')?.image },
-            { name: d.rangeLiby, href: r.r2, img: PRODUCTS.find(p => p.slug === 'le-liby-rouge')?.image },
-            { name: d.rangeChateau, href: r.r3, img: PRODUCTS.find(p => p.slug === 'promenade')?.image },
+            { name: d.rangeTerres, href: r.r1, slug: FLAGSHIP, tone: '#dddcc6' },
+            { name: d.rangeLiby, href: r.r2, slug: 'le-liby-rouge', tone: '#ebd4cb' },
+            { name: d.rangeChateau, href: r.r3, slug: 'promenade', tone: '#e9dec8' },
           ].map((g, i) => (
-            <Reveal key={g.href} delay={i * 0.12}>
-              <Hoverable scale={1.02} lift={6}>
-                <Link href={g.href as any} asChild>
-                  <Pressable style={styles.rangeCard}>
-                    {g.img && <Image source={{ uri: g.img }} style={styles.rangeImg} resizeMode="contain" />}
-                    <Text style={[styles.rangeName, serif]}>{g.name}</Text>
-                  </Pressable>
-                </Link>
-              </Hoverable>
-            </Reveal>
+            <Link key={g.href} href={g.href as any} asChild>
+              <Pressable style={StyleSheet.flatten([styles.rangeCard, wide && styles.rangeCardWide, { backgroundColor: g.tone }])}>
+                <Text style={styles.rangeIndex}>0{i + 1} / 03</Text>
+                <Image source={{ uri: PRODUCTS.find((p) => p.slug === g.slug)?.image ?? undefined }} style={styles.rangeImg} resizeMode="contain" />
+                <View style={styles.rangeCaption}>
+                  <Text style={[styles.rangeName, serif]}>{g.name}</Text>
+                  <Text style={styles.arrow} aria-hidden>{'\u2197'}</Text>
+                </View>
+              </Pressable>
+            </Link>
           ))}
         </View>
       </Section>
 
-      {/* Sommelier virtuel : deux entrées */}
-      <Section style={{ backgroundColor: colors.paper, maxWidth: '100%' }}>
-        <View style={{ maxWidth: 1080, width: '100%', alignSelf: 'center' }}>
-          <Reveal>
-            <Eyebrow>{lang === 'fr' ? 'Assistant' : 'Assistant'}</Eyebrow>
-            <H2>{d.homeAssTitle}</H2>
-            <P style={{ marginTop: 10, maxWidth: 620 }}>{d.homeAssText}</P>
-          </Reveal>
-          <View style={[styles.rangeRow, { marginTop: 20 }]}>
-            {[
-              { title: d.homeAssVin, text: d.homeAssVinText, href: r.sommelier },
-              { title: d.homeAssVisit, text: d.homeAssVisitText, href: r.visit },
-            ].map((c, i) => (
-              <Reveal key={c.href} delay={0.1 + i * 0.12}>
-                <Hoverable scale={1.02} lift={6}>
-                  <Link href={c.href as any} asChild>
-                    <Pressable style={styles.assCard}>
-                      <Text style={[styles.assTitle, serif]}>{c.title}</Text>
-                      <P style={{ fontSize: 14, marginTop: 6 }}>{c.text}</P>
-                      <Text style={styles.assGo}>→</Text>
-                    </Pressable>
-                  </Link>
-                </Hoverable>
-              </Reveal>
-            ))}
+      <View style={styles.experience}>
+        <Section style={wide ? styles.experienceWide : undefined}>
+          <Image source={require('../assets/images/estate-cellar.jpg')} resizeMode="cover" style={styles.cellarPhoto} />
+          <View style={styles.experienceCopy}>
+            <Eyebrow style={styles.mastKicker}>{fr ? '03 / Au chai' : '03 / In the cellar'}</Eyebrow>
+            <H2 style={styles.lightText}>{d.homeOenoTitle}</H2>
+            <P style={styles.mastDescription}>{d.homeOenoText}</P>
+            <View style={styles.ctaRow}>
+              <CTAButton href={r.oeno} label={d.homeOenoCta} primary={false} inverted />
+              <CTAButton href={r.priva} label={d.navPriva} primary={false} inverted />
+            </View>
           </View>
+        </Section>
+      </View>
+      <Section>
+        <Eyebrow>{fr ? '04 / À votre service' : '04 / At your service'}</Eyebrow>
+        <H2>{d.homeAssTitle}</H2>
+        <View style={styles.assList}>
+          {[
+            { title: d.homeAssVin, text: d.homeAssVinText, href: r.sommelier },
+            { title: d.homeAssVisit, text: d.homeAssVisitText, href: r.visit },
+            { title: d.homeIdentityTitle, text: d.homeIdentityText, href: r.identity },
+          ].map((c) => (
+            <Link key={c.href} href={c.href as any} asChild>
+              <Pressable style={styles.assCard}>
+                <View style={styles.assCopy}>
+                  <Text style={[styles.assTitle, serif]}>{c.title}</Text>
+                  <P>{c.text}</P>
+                </View>
+                <Text style={styles.arrow} aria-hidden>{'\u2197'}</Text>
+              </Pressable>
+            </Link>
+          ))}
+        </View>
+        <View style={styles.ctaRow}>
+          <CTAButton href={`${lang === 'en' ? '/en' : ''}/vins/${FLAGSHIP}/?viewer=1`} label={fr ? 'Explorer la Cuvée A en 3D' : 'Explore Cuvée A in 3D'} primary={false} />
         </View>
       </Section>
-
-      <Band title={d.homeOenoTitle} text={d.homeOenoText} cta={d.homeOenoCta} href={r.oeno} />
-      <Band title={d.homeEventsTitle} text={d.homeEventsText} cta={d.homeEventsCta} href={r.priva} dark />
-      <Band title={d.homeIdentityTitle} text={d.homeIdentityText} cta={d.homeIdentityCta} href={r.identity} />
-
-      <Section style={{ alignItems: 'center' }}>
-        <CTAButton href={r.shop} label={d.shopNow} />
-      </Section>
     </WebShell>
-  );
-}
-
-function Band({ title, text, cta, href, dark }: { title: string; text: string; cta: string; href: string; dark?: boolean }) {
-  return (
-    <View style={[styles.band, dark && { backgroundColor: colors.ink }]}>
-      <Section>
-        <Reveal>
-          <H2 style={dark && { color: colors.paper }}>{title}</H2>
-          <P style={[{ marginVertical: 14, maxWidth: 640 }, dark && { color: '#CBBFA8' }]}>{text}</P>
-          <CTAButton href={href} label={cta} primary={!dark} inverted={dark ? true : false} />
-        </Reveal>
-      </Section>
-    </View>
   );
 }
 
@@ -236,7 +212,7 @@ export function ShopScreen({ lang }: { lang: Lang }) {
         {chips([[null, d.filterAll], ['terres-des-amoureuses', d.rangeTerres], ['le-liby', d.rangeLiby], ['chateau-les-amoureuses', d.rangeChateau], ['coffrets', d.coffrets], ['epicerie-fine', d.epicerie]], range, setRange)}
         <Text style={[styles.filterLabel, { marginTop: 10 }]}>{d.filterColor}</Text>
         {chips([[null, d.filterAll], ['rouge', d.rouge], ['blanc', d.blanc], ['rose', d.rose]], color, setColor)}
-        <View style={styles.grid}>
+        <View style={styles.catalogGrid}>
           {filtered.map((p) => <ProductCard key={p.id} product={p} lang={lang} />)}
         </View>
       </Section>
@@ -254,7 +230,11 @@ export function ProductScreen({ slug, lang, initialViewer }: { slug: string; lan
   const [variation, setVariation] = useState<Variation | null>(null);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
-  const [show3d, setShow3d] = useState(!!initialViewer);
+  const [viewerReady, setViewerReady] = useState(false);
+  const [viewerOverride, setViewerOverride] = useState<boolean | null>(null);
+  // Static HTML has no query string; apply the deep link after hydration.
+  useEffect(() => setViewerReady(true), []);
+  const show3d = viewerOverride ?? (viewerReady && !!initialViewer);
 
   useEffect(() => {
     // Live refresh: price, stock and purchasability stay governed by WooCommerce
@@ -334,7 +314,7 @@ export function ProductScreen({ slug, lang, initialViewer }: { slug: string; lan
           </View>
           <View style={styles.productInfo}>
             <Eyebrow>{product.categories.includes('coffrets') ? d.coffrets : product.categories.includes('epicerie-fine') ? d.epicerie : 'Vin'}</Eyebrow>
-            <H1 style={{ fontSize: 34, lineHeight: 40 }}>{decodeEntities(product.name)}</H1>
+            <H1>{decodeEntities(product.name)}</H1>
             {product.description ? <P style={{ marginTop: 12 }}>{product.description}</P> : null}
 
             {variations.length > 0 && (
@@ -361,7 +341,7 @@ export function ProductScreen({ slug, lang, initialViewer }: { slug: string; lan
 
             <View style={[styles.ctaRow, { marginTop: 20 }]}>
               <CTAButton label={adding ? '…' : added ? `✓ ${d.added}` : d.addToCart} onPress={doAdd} />
-              <CTAButton label={show3d ? 'Packshot' : d.explore3d} primary={false} onPress={() => setShow3d((v) => !v)} />
+              <CTAButton label={show3d ? 'Packshot' : d.explore3d} primary={false} onPress={() => setViewerOverride(!show3d)} />
             </View>
             <Text style={{ marginTop: 14, fontSize: 13, color: product.inStock ? colors.success : colors.error }}>
               {product.inStock ? d.inStock : d.outOfStock}
@@ -521,15 +501,20 @@ export function OenoScreen({ lang }: { lang: Lang }) {
         hreflangFr={absUrl('/oenotourisme/')}
         hreflangEn={absUrl('/en/our-services/')}
       />
-      <Section>
-        <Eyebrow>{d.navOeno}</Eyebrow>
-        <H1>{d.oenoTitle}</H1>
-        <P style={{ marginTop: 12, maxWidth: 640 }}>{d.oenoIntro}</P>
-      </Section>
+      <View style={styles.experience}>
+        <Section>
+          <Eyebrow style={styles.mastKicker}>{d.navOeno}</Eyebrow>
+          <H1 style={styles.lightText}>{d.oenoTitle}</H1>
+          <P style={styles.mastDescription}>{d.oenoIntro}</P>
+          <View style={styles.ctaRow}>
+            <CTAButton href={lang === 'fr' ? '/preparer-ma-visite/' : '/en/plan-my-visit/'} label={d.homeAssVisit} primary={false} inverted />
+          </View>
+        </Section>
+      </View>
       <Section>
         {ACTIVITIES.map((a) => (
           <View key={a.id} style={styles.activity}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.activityCopy}>
               <H2 style={{ fontSize: 24, lineHeight: 30 }}>{lang === 'fr' ? a.titleFr : a.titleEn}</H2>
               <P style={{ marginTop: 8 }}>{lang === 'fr' ? a.descFr : a.descEn}</P>
               <Text style={styles.activityMeta}>
@@ -729,23 +714,39 @@ export function PostScreen({ slug, lang }: { slug: string; lang: Lang }) {
 /* --------------------------------- Styles ---------------------------------- */
 
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 20 },
-  heroDark: { width: '100%', backgroundColor: '#171008', position: 'relative', overflow: 'hidden' },
-  heroInner: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 24, maxWidth: 1240, width: '100%', alignSelf: 'center' },
-  heroTitle: { color: colors.cream, letterSpacing: 0.5 },
-  heroMedalWrap: { position: 'absolute', top: '6%', left: '12%', width: '76%', height: '88%', opacity: 0.16 },
-  heroMedal: { width: '100%', height: '100%' },
-  heroText: { flex: 1, maxWidth: 560 },
-  heroBottle: { flex: 1, width: '100%', maxWidth: 480 },
-  ctaRow: { flexDirection: 'row', gap: 14, marginTop: 24, flexWrap: 'wrap' },
-  band: { borderTopWidth: 1, borderTopColor: colors.line },
-  rangeRow: { flexDirection: 'row', gap: 16, flexWrap: 'wrap', marginTop: 8 },
-  rangeCard: { width: 220, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, padding: 18, alignItems: 'center' },
-  assCard: { width: 300, maxWidth: '100%', backgroundColor: colors.cream, borderWidth: 1, borderColor: colors.line, padding: 22 },
-  assTitle: { fontSize: 22, color: colors.ink },
-  assGo: { fontSize: 22, color: colors.terra, marginTop: 10 },
-  rangeImg: { width: '100%', height: 160 },
-  rangeName: { fontSize: 18, color: colors.ink, textAlign: 'center', marginTop: 8 },
+  masthead: { backgroundColor: colors.ink },
+  editorialRow: { flexDirection: 'row' },
+  mastCopy: { paddingHorizontal: 24, paddingTop: 42, paddingBottom: 24, justifyContent: 'center' },
+  mastCopyWide: { flex: 1, minWidth: 0, paddingHorizontal: '5%', paddingTop: 56 },
+  mastKicker: { color: '#e4c59c', marginBottom: 20 },
+  mastTitle: { fontSize: 47, lineHeight: 47, color: colors.cream, letterSpacing: -1.4 },
+  mastTitleWide: { fontSize: 72, lineHeight: 72, letterSpacing: -2.5 },
+  mastItalic: { fontStyle: 'italic', color: '#e4c59c' },
+  mastDescription: { color: '#e1d9ca', maxWidth: 480, marginTop: 18 },
+  mastNote: { color: '#d7c7ae', borderTopWidth: 1, borderTopColor: '#6c6358', paddingTop: 14, marginTop: 32, fontSize: 10, letterSpacing: 1.6 },
+  mastPhoto: { height: 265, backgroundColor: '#444332', position: 'relative' },
+  mastPhotoWide: { width: '48%', height: 'auto', minHeight: 540 },
+  cover: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  photoCaption: { position: 'absolute', left: 16, bottom: 16, backgroundColor: colors.ink, paddingHorizontal: 12, paddingVertical: 8, color: colors.cream, fontSize: 10, letterSpacing: 1.3 },
+  ctaRow: { flexDirection: 'row', gap: 10, marginTop: 24, flexWrap: 'wrap' },
+  collectionHeader: { gap: 16, justifyContent: 'space-between', flexWrap: 'wrap' },
+  rangeRow: { gap: 12, marginTop: 26 },
+  rangeCard: { padding: 18, minWidth: 0 },
+  rangeCardWide: { flex: 1 },
+  rangeIndex: { color: colors.inkSoft, fontSize: 11, letterSpacing: 2 },
+  rangeImg: { width: '100%', height: 200, marginVertical: 8 },
+  rangeCaption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#857969' },
+  rangeName: { fontSize: 24, flexShrink: 1, color: colors.ink },
+  arrow: { fontSize: 24, color: colors.terra },
+  experience: { backgroundColor: colors.ink },
+  experienceWide: { flexDirection: 'row', alignItems: 'center', gap: 42 },
+  cellarPhoto: { width: '100%', maxWidth: 490, aspectRatio: 1.4 },
+  experienceCopy: { flex: 1, minWidth: 0, paddingVertical: 20 },
+  lightText: { color: colors.cream },
+  assList: { marginTop: 20, borderTopWidth: 1, borderTopColor: colors.line },
+  assCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: colors.line, paddingVertical: 20 },
+  assCopy: { flex: 1, maxWidth: 690 },
+  assTitle: { fontSize: 28, color: colors.ink, marginBottom: 4 },
   chipRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 8 },
   chip: { borderWidth: 1, borderColor: colors.line, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, backgroundColor: colors.paper },
   chipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
@@ -753,9 +754,10 @@ const styles = StyleSheet.create({
   chipTextOn: { color: colors.paper },
   filterLabel: { fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', color: colors.inkSoft, marginTop: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 18, marginTop: 24 },
-  productRow: { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: 32, flexWrap: 'wrap' },
-  productVisual: { width: '100%', maxWidth: 420, height: 480, alignSelf: 'center' },
-  productInfo: { flex: 1, minWidth: 300 },
+  catalogGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 24 },
+  productRow: { flexDirection: Platform.OS === 'web' ? 'row' : 'column', gap: 24, flexWrap: 'wrap' },
+  productVisual: { width: '100%', maxWidth: 420, height: 390, alignSelf: 'center', backgroundColor: '#e9e1d3', padding: 16 },
+  productInfo: { flex: 1, minWidth: Platform.OS === 'web' ? 280 : 0, maxWidth: '100%' },
   priceBig: { fontSize: 24, color: colors.terra, fontWeight: '700' },
   casePrice: { fontSize: 15, color: colors.ink, marginTop: 6 },
   cartItem: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line },
@@ -769,6 +771,7 @@ const styles = StyleSheet.create({
   total: { fontSize: 20, color: colors.ink, fontWeight: '700' },
   input: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, padding: 14, fontSize: 15, color: colors.ink, marginBottom: 10, borderRadius: 2 },
   activity: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: colors.line },
+  activityCopy: { flexGrow: 1, flexBasis: 320, minWidth: 0 },
   activityMeta: { marginTop: 10, fontSize: 13, color: colors.inkSoft, letterSpacing: 0.5 },
   spacesRow: { flexDirection: 'row', gap: 14, flexWrap: 'wrap', marginTop: 22 },
   spaceCard: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, paddingVertical: 26, paddingHorizontal: 30 },

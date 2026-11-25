@@ -442,8 +442,10 @@ export function AssistantScreen({ lang, flow }: { lang: Lang; flow: 'vin' | 'vis
         canonical={absUrl(mode === 'vin' ? '/trouver-ma-cuvee/' : '/preparer-ma-visite/')}
       />
       <Section style={{ maxWidth: 760 }}>
-        <Eyebrow>{lang === 'fr' ? 'Sommelier virtuel' : 'Virtual sommelier'}</Eyebrow>
-        <H1 style={{ fontSize: 34, lineHeight: 42 }}>{mode === 'vin' ? d.titleVin : d.titleVisite}</H1>
+        <View style={st.masthead}>
+          <Eyebrow style={st.mastKicker}>{lang === 'fr' ? 'Le carnet des Amoureuses' : 'The Les Amoureuses notebook'}</Eyebrow>
+          <H1 style={st.mastTitle}>{mode === 'vin' ? d.titleVin : d.titleVisite}</H1>
+        </View>
 
         {/* Fil de conversation */}
         <View style={{ marginTop: 20, gap: 12 }}>
@@ -718,11 +720,13 @@ const st = StyleSheet.create({
   chipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: 13, color: colors.ink },
   chipTextOn: { color: colors.paper },
-  inputRow: { flexDirection: 'row', gap: 10, marginTop: 24, alignItems: 'center' },
+  masthead: { backgroundColor: colors.ink, padding: 22 },
+  mastKicker: { color: '#e4c59c' },
+  mastTitle: { color: colors.paper, fontSize: 40, lineHeight: 42 },
+  inputRow: { flexDirection: 'row', gap: 8, marginTop: 24, alignItems: 'center' },
   input: {
-    flex: 1, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper,
+    flex: 1, minWidth: 0, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper,
     paddingVertical: 12, paddingHorizontal: 14, fontSize: 15, color: colors.ink, borderRadius: 2,
-    ...(Platform.OS === 'web' ? ({ outlineStyle: 'none' } as any) : {}),
   },
   sendBtn: { backgroundColor: colors.terra, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 2 },
   sendText: { color: colors.paper, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' },
