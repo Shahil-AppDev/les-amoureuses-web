@@ -3,11 +3,11 @@ import { Linking, Pressable, StyleSheet, Text } from 'react-native';
 import { colors } from '../constants/theme';
 
 // Native fallback: opens the hosted Elloha booking page.
-export function EllohaButton({ widgetId, culture = 'fr-FR' }: { widgetId: string; culture?: string }) {
+export function EllohaButton({ widgetId, culture = 'fr-FR', label = 'Réserver' }: { widgetId: string; culture?: string; label?: string }) {
   const url = `https://reservation.elloha.com/Widget/BookingButton/${widgetId}?idoi=190471b7-b0ac-490e-b45e-66c74649caec&culture=${culture}`;
   return (
     <Pressable style={styles.btn} onPress={() => Linking.openURL(url)}>
-      <Text style={styles.text}>Réserver</Text>
+      <Text style={styles.text}>{label}</Text>
     </Pressable>
   );
 }

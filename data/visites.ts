@@ -47,7 +47,7 @@ export const ACTIVITIES: Activity[] = [
 
 const NUM_WORDS: Record<string, number> = {
   un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10,
-  one: 1, two: 2, three: 3, four: 4, five: 5, sixen: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  one: 1, two: 2, three: 3, four: 4, five: 5, seven: 7, eight: 8, nine: 9, ten: 10,
 };
 
 const DAYS: [RegExp, string][] = [
@@ -78,11 +78,12 @@ export function parseBookingText(text: string, current: VisitAnswers = {}): { an
     const wordMatch = text.match(/\b(deux|trois|quatre|cinq|six|sept|huit|neuf|dix)\s*(?:personnes?|convives)?/i);
     if (wordMatch) { answers.participants = NUM_WORDS[wordMatch[1].toLowerCase()]; found.push('participants'); }
   }
-  for (const [re, day] of DAYS) {
-    if (re.test(text)) { answers.day = day; found.push('day'); break; }
+  for (const [re] of DAYS) {
+    const day = text.match(re);
+    if (day) { answers.day = day[0]; found.push('day'); break; }
   }
-  const dateMatch = text.match(/(\d{1,2}\s*(?:\/|-|\s)\s*(?:\d{1,2}|janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)(?:\s*(?:\/|-|\s)\s*\d{2,4})?)/i);
-  if (dateMatch) { answers.dateText = dateMatch[1]; found.push('day'); }
+  const dateMatch = text.match(/\b(?:\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?|(?:\d{1,2} (?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)|(?:january|february|march|april|may|june|july|august|september|october|november|december) \d{1,2})(?: \d{4})?|demain|tomorrow)\b/i);
+  if (dateMatch) { answers.day = dateMatch[0]; found.push('day'); }
   if (/repas|mets|gastronom|d[îi]ner|d[ée]jeuner|meal|dinner|lunch|food/i.test(text)) { answers.preference = 'repas'; found.push('preference'); }
   else if (/d[ée]gustation|tasting|vin\b/i.test(text)) { answers.preference = 'degustation'; found.push('preference'); }
   else if (/d[ée]couverte|visite|tour|discover/i.test(text)) { answers.preference = 'decouverte'; found.push('preference'); }

@@ -6,6 +6,7 @@ import { t } from '../lib/i18n';
 import { useApp } from '../context/AppContext';
 import { useCart } from '../context/CartContext';
 import { AgeGate } from './AgeGate';
+import { ChatBubble } from './ChatBubble';
 import { MotionRoot } from './motionfx';
 import type { Lang } from '../lib/types';
 
@@ -68,10 +69,11 @@ export function LangSwitch({ onSwitch }: { onSwitch?: () => void }) {
   );
 }
 
-export function WebShell({ children, lang }: { children: React.ReactNode; lang: Lang }) {
+export function WebShell({ children, lang, hideChat = false }: { children: React.ReactNode; lang: Lang; hideChat?: boolean }) {
   const d = t(lang);
   const r = ROUTES[lang];
   const { cart } = useCart();
+  const { ageVerified } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const { width } = useWindowDimensions();
   // SSR rend la version compacte ; le premier rendu client doit lui correspondre
@@ -146,6 +148,7 @@ export function WebShell({ children, lang }: { children: React.ReactNode; lang: 
           <Text style={styles.legal}>{d.alcoholWarning}</Text>
         </View>
       </ScrollView>
+      {ageVerified && !hideChat && <ChatBubble lang={lang} />}
       <AgeGate />
     </View>
     </MotionRoot>

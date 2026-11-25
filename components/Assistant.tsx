@@ -3,21 +3,19 @@ import {
   Animated, Image, Linking, Platform, Pressable, ScrollView, StyleSheet,
   Text, TextInput, View,
 } from 'react-native';
-import { Link } from 'expo-router';
 import { colors, fonts } from '../constants/theme';
 import { decodeEntities } from '../lib/text';
-import type { Lang, Product } from '../lib/types';
+import type { Lang } from '../lib/types';
 import { PRODUCTS } from '../data/products';
 import {
-  BUDGET_RANGES, CUVEES, conditioning, parseFreeText, recommend,
+  BUDGET_RANGES, CUVEES, conditioning, recommend,
   type DishKey, type SommelierAnswers, type TasteKey,
 } from '../data/sommelier';
-import { ACTIVITIES, matchActivities, parseBookingText, type VisitAnswers } from '../data/visites';
+import { matchActivities, type VisitAnswers } from '../data/visites';
+import { chatTurn, visitQuestion, type ChatMode, type ChatReply } from '../lib/assistant-chat';
 import { storeApi, hosted } from '../lib/store-api';
 import { storeApiReachable, useCart } from '../context/CartContext';
-import { WebShell } from './WebShell';
-import { CTAButton, Eyebrow, H1, P, Section } from './ui';
-import { SeoHead, absUrl } from './SeoHead';
+import { CTAButton, Eyebrow, H1, P } from './ui';
 import { EllohaButton } from './EllohaWidget';
 
 const serif = Platform.OS === 'web' ? { fontFamily: fonts.displayWeb } : {};
@@ -150,12 +148,32 @@ const STR = {
 };
 
 type Dict = typeof STR.fr;
+type ChatMessage = { role: 'bot' | 'user'; text: string; id: number };
+
+function chatReply(reply: ChatReply, lang: Lang, visit: VisitAnswers) {
+  const d = STR[lang];
+  const fr = lang === 'fr';
+  const replies: Record<ChatReply, string> = {
+    dish: d.qDish,
+    budget: d.qBudget,
+    taste: d.qTaste,
+    participants: d.qParticipants,
+    day: d.qDate,
+    wineResults: fr ? 'Voici le résultat pour vos critères. Vous pouvez encore modifier votre budget ou votre plat ici.' : 'Here is the result for your criteria. You can still change your budget or dish here.',
+    visitResults: fr
+      ? `Pour ${visit.participants} personne(s), date souhaitée : ${visit.day}. Voici les expériences à comparer. Vérifiez les créneaux chez Elloha.`
+      : `For ${visit.participants} guest(s), preferred date: ${visit.day}. Compare these experiences and check available times on Elloha.`,
+    quote: fr ? 'Voici un brouillon à relire. Rien ne sera envoyé automatiquement.' : 'Here is a draft to review. Nothing will be sent automatically.',
+    unknown: fr ? 'Je n’ai pas compris. Indiquez un plat, un budget, une date ou un nombre de personnes, ou essayez le guide.' : 'I didn’t catch that. Enter a dish, budget, date or group size, or try the guide.',
+  };
+  return replies[reply];
+}
 
 /* ------------------------------ Petits widgets ---------------------------- */
 
 function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[st.chip, selected && st.chipOn]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }} style={[st.chip, selected && st.chipOn]}>
       <Text style={[st.chipText, selected && st.chipTextOn]}>{label}</Text>
     </Pressable>
   );
@@ -361,21 +379,36 @@ function buildExplanation(lang: Lang, d: Dict, answers: SommelierAnswers, rec: N
 type Step = 'dish' | 'budget' | 'taste' | 'prep' | 'result';
 const ORDER: Step[] = ['dish', 'budget', 'taste', 'prep'];
 
-export function AssistantScreen({ lang, flow }: { lang: Lang; flow: 'vin' | 'visite' }) {
+export function AssistantConversation({ lang, flow, compact = false }: { lang: Lang; flow: ChatMode; compact?: boolean }) {
   const d = STR[lang];
-  const [mode, setMode] = useState<'vin' | 'visite'>(flow);
+  const [mode, setMode] = useState<ChatMode>(flow);
   const [answers, setAnswers] = useState<SommelierAnswers>({});
   const [vanswers, setVanswers] = useState<VisitAnswers>({});
   const [step, setStep] = useState<Step>('dish');
   const [showResult, setShowResult] = useState(false);
   const [freeText, setFreeText] = useState('');
-  const [ack, setAck] = useState<string[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [guided, setGuided] = useState(false);
   const [detailInput, setDetailInput] = useState('');
   const [totalInput, setTotalInput] = useState('');
   const [prepInput, setPrepInput] = useState('');
   const [dateInput, setDateInput] = useState('');
   const [showQuote, setShowQuote] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const id = useRef(0);
+  const fr = lang === 'fr';
+  const example = mode === 'vin'
+    ? (fr ? 'Un vin fruité pour une côte de bœuf, 30 à 50 €' : 'A fruity wine for beef, 30 to 50 euros')
+    : (fr ? 'Nous sommes six samedi' : 'We are six on Saturday');
+  const quickQuestions = fr ? [
+    'Quel vin fruité pour une côte de bœuf, entre 30 et 50 € ?',
+    'Que peut-on réserver pour six personnes samedi ?',
+    'Comment demander un devis de privatisation ?',
+  ] : [
+    'Which fruity wine goes with beef, between €30 and €50?',
+    'What can we book for six people on Saturday?',
+    'How do I get a quote for private hire?',
+  ];
 
   const result = useMemo(
     () => (showResult ? recommend(answers, PRODUCTS.filter((p) => CUVEES[p.slug])) : { main: null, alternative: null }),
@@ -385,7 +418,7 @@ export function AssistantScreen({ lang, flow }: { lang: Lang; flow: 'vin' | 'vis
   const nextStep = (current: Step, a: SommelierAnswers): Step => {
     const idx = ORDER.indexOf(current);
     for (const s of ORDER.slice(idx + 1)) {
-      if (s === 'budget' && !a.budgetKey) return s;
+      if (s === 'budget' && !a.budgetKey && a.bottleMax === undefined && a.totalBudget === undefined) return s;
       if (s === 'taste' && !a.taste) return s;
       if (s === 'prep') return s;
     }
@@ -393,68 +426,115 @@ export function AssistantScreen({ lang, flow }: { lang: Lang; flow: 'vin' | 'vis
   };
 
   const answer = (patch: Partial<SommelierAnswers>, current: Step) => {
-    const merged = { ...answers, ...patch };
+    const merged = { ...answers, ...patch, ...('budgetKey' in patch ? { bottleMin: undefined, bottleMax: undefined } : {}) };
     setAnswers(merged);
     setShowResult(false);
     setStep(nextStep(current, merged));
   };
 
-  const submitFreeText = () => {
-    const text = freeText.trim();
-    if (!text) return;
-    setFreeText('');
-    if (mode === 'vin') {
-      const { answers: parsed, found } = parseFreeText(text, answers);
-      setAnswers(parsed);
-      setShowResult(false);
-      const bits: string[] = [];
-      if (parsed.dish) bits.push(d.dishes[parsed.dish] + (parsed.dishDetail ? ` (${parsed.dishDetail})` : ''));
-      if (parsed.taste) bits.push(d.tastes[parsed.taste]);
-      if (parsed.budgetKey) bits.push(d.budgets[parsed.budgetKey]);
-      if (parsed.totalBudget) bits.push(`${parsed.totalBudget} € total`);
-      if (parsed.preparation) bits.push(parsed.preparation);
-      setAck(bits);
-      if (parsed.dishDetail) setDetailInput(parsed.dishDetail);
-      if (parsed.preparation) setPrepInput(parsed.preparation);
-      if (parsed.totalBudget) setTotalInput(String(parsed.totalBudget));
-      // saute à la première question sans réponse
-      if (!parsed.dish) setStep('dish');
-      else if (!parsed.budgetKey) setStep('budget');
-      else if (!parsed.taste) setStep('taste');
-      else setStep('prep');
-    } else {
-      const { answers: parsed } = parseBookingText(text, vanswers);
-      setVanswers(parsed);
-      setAck([]);
-    }
+  const append = (reply: string, text?: string) => {
+    const added: ChatMessage[] = [];
+    if (text) added.push({ role: 'user', text, id: id.current++ });
+    added.push({ role: 'bot', text: reply, id: id.current++ });
+    setMessages((prev) => [...prev, ...added].slice(-24));
   };
 
-  const r = useMemo(() => ({
-    vin: lang === 'en' ? '/en/find-my-wine/' : '/trouver-ma-cuvee/',
-    visite: lang === 'en' ? '/en/plan-my-visit/' : '/preparer-ma-visite/',
-  }), [lang]);
+  const submit = (input: string) => {
+    const text = input.trim().slice(0, 350);
+    if (!text) return;
+    setFreeText('');
+    const turn = chatTurn(text, mode, answers, vanswers);
+    append(chatReply(turn.reply, lang, turn.visit), text);
+    if (turn.reply === 'unknown') return;
+    setMode(turn.mode);
+    if (turn.mode === 'visite') {
+      setVanswers(turn.visit);
+      setDateInput(turn.visit.day ?? '');
+      if (turn.reply === 'quote') setShowQuote(true);
+      return;
+    }
+    setAnswers(turn.wine);
+    setDetailInput(turn.wine.dishDetail ?? '');
+    setPrepInput(turn.wine.preparation ?? '');
+    setTotalInput(turn.wine.totalBudget?.toString() ?? '');
+    setStep(turn.reply === 'dish' || turn.reply === 'budget' || turn.reply === 'taste' ? turn.reply : 'prep');
+    setShowResult(turn.reply === 'wineResults');
+  };
+
+  const switchMode = (next: ChatMode) => {
+    if (next === mode) return;
+    setMode(next);
+    append(next === 'vin' ? d.introVin : d.introVisite);
+  };
+  const reset = () => {
+    setMessages([]);
+    setMode(flow);
+    setFreeText('');
+    setAnswers({});
+    setVanswers({});
+    setDetailInput('');
+    setPrepInput('');
+    setTotalInput('');
+    setDateInput('');
+    setStep('dish');
+    setShowResult(false);
+    setShowQuote(false);
+    setGuided(false);
+  };
 
   return (
-    <WebShell lang={lang}>
-      <SeoHead
-        title={mode === 'vin' ? `${d.titleVin} | Domaine Les Amoureuses` : `${d.titleVisite} | Domaine Les Amoureuses`}
-        description={mode === 'vin' ? d.introVin : d.introVisite}
-        canonical={absUrl(mode === 'vin' ? '/trouver-ma-cuvee/' : '/preparer-ma-visite/')}
-      />
-      <Section style={{ maxWidth: 760 }}>
+    <View>
+      {!compact && (
         <View style={st.masthead}>
           <Eyebrow style={st.mastKicker}>{lang === 'fr' ? 'Le carnet des Amoureuses' : 'The Les Amoureuses notebook'}</Eyebrow>
           <H1 style={st.mastTitle}>{mode === 'vin' ? d.titleVin : d.titleVisite}</H1>
         </View>
+      )}
 
-        {/* Fil de conversation */}
-        <View style={{ marginTop: 20, gap: 12 }}>
-          <Bubble role="bot"><BubbleText>{mode === 'vin' ? d.introVin : d.introVisite}</BubbleText></Bubble>
-          {ack.length > 0 && (
-            <Bubble role="bot"><BubbleText>{d.understood(ack)}</BubbleText></Bubble>
-          )}
-
-          {mode === 'vin' ? (
+        <View style={st.chat}>
+          <View style={st.chatTabs}>
+            <Chip label="Sommelier" selected={mode === 'vin'} onPress={() => switchMode('vin')} />
+            <Chip label={fr ? 'Réservation' : 'Booking'} selected={mode === 'visite'} onPress={() => switchMode('visite')} />
+          </View>
+          <ScrollView ref={scrollRef} style={st.thread} contentContainerStyle={st.threadContent} nestedScrollEnabled keyboardShouldPersistTaps="handled" onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}>
+            <Bubble role="bot">{flow === 'vin' ? d.introVin : d.introVisite}</Bubble>
+            {messages.map((message, index) => (
+              <View key={message.id} accessibilityLiveRegion={message.role === 'bot' && index === messages.length - 1 ? 'polite' : 'none'}>
+                <Bubble role={message.role}>{message.text}</Bubble>
+              </View>
+            ))}
+          </ScrollView>
+          {messages.length === 0 && (compact ? (
+            <View style={st.quickQuestions}>
+              <Eyebrow>{fr ? 'Questions rapides' : 'Quick questions'}</Eyebrow>
+              {quickQuestions.map((question) => (
+                <Chip key={question} label={question} onPress={() => submit(question)} />
+              ))}
+            </View>
+          ) : <Chip label={example} onPress={() => submit(example)} />)}
+          <View style={st.inputRow}>
+            <TextInput
+              value={freeText}
+              onChangeText={setFreeText}
+              onSubmitEditing={() => submit(freeText)}
+              maxLength={350}
+              returnKeyType="send"
+              accessibilityLabel={fr ? 'Votre message' : 'Your message'}
+              placeholder={mode === 'vin' ? d.writeHere : d.writeHereVisit}
+              placeholderTextColor={colors.inkSoft}
+              style={st.input}
+            />
+            <Pressable onPress={() => submit(freeText)} disabled={!freeText.trim()} style={st.sendBtn} accessibilityRole="button" accessibilityLabel={d.send}>
+              <Text style={st.sendText}>{d.send}</Text>
+            </Pressable>
+          </View>
+          <View style={st.chatTabs}>
+            <Chip label={fr ? 'Parcours guidé' : 'Guided options'} selected={guided} onPress={() => setGuided(!guided)} />
+            <Chip label={fr ? 'Nouveau chat' : 'New chat'} onPress={reset} />
+          </View>
+        </View>
+        <View style={{ marginTop: compact ? 12 : 20 }}>
+          {mode === 'vin' && (guided || showResult) ? (
             <VinFlow
               d={d} lang={lang} answers={answers} step={step} setStep={setStep}
               answer={answer} showResult={showResult} setShowResult={setShowResult}
@@ -462,38 +542,18 @@ export function AssistantScreen({ lang, flow }: { lang: Lang; flow: 'vin' | 'vis
               totalInput={totalInput} setTotalInput={setTotalInput}
               prepInput={prepInput} setPrepInput={setPrepInput}
               result={result}
-              onRefine={() => { setShowResult(false); setStep('dish'); }}
+              onRefine={() => { setShowResult(false); setStep('dish'); setGuided(true); }}
             />
-          ) : (
+          ) : mode === 'visite' && (guided || showQuote || visitQuestion(vanswers) === 'visitResults') ? (
             <VisitFlow
               d={d} lang={lang} vanswers={vanswers} setVanswers={setVanswers}
               dateInput={dateInput} setDateInput={setDateInput}
               showQuote={showQuote} setShowQuote={setShowQuote}
+              guided={guided}
             />
-          )}
+          ) : null}
         </View>
-
-        {/* Entrée libre + bascule de flux */}
-        <View style={st.inputRow}>
-          <TextInput
-            value={freeText}
-            onChangeText={setFreeText}
-            onSubmitEditing={submitFreeText}
-            placeholder={mode === 'vin' ? d.writeHere : d.writeHereVisit}
-            placeholderTextColor={colors.inkSoft}
-            style={st.input}
-          />
-          <Pressable onPress={submitFreeText} style={st.sendBtn} accessibilityLabel={d.send}>
-            <Text style={st.sendText}>{d.send}</Text>
-          </Pressable>
-        </View>
-        <Link href={(mode === 'vin' ? r.visite : r.vin) as any} asChild>
-          <Pressable>
-            <Text style={st.switchLink}>{mode === 'vin' ? d.switchToVisit : d.switchToVin}</Text>
-          </Pressable>
-        </Link>
-      </Section>
-    </WebShell>
+    </View>
   );
 }
 
@@ -538,7 +598,7 @@ function VinFlow({ d, lang, answers, step, setStep, answer, showResult, setShowR
       </View>
 
       {/* Budget — visible dès que le plat est choisi */}
-      {answers.dish && (step === 'budget' || answers.budgetKey) && (
+      {answers.dish && (
         <View>
           <Bubble role="bot"><BubbleText>{d.qBudget}</BubbleText></Bubble>
           <View style={st.chipRow}>
@@ -550,8 +610,8 @@ function VinFlow({ d, lang, answers, step, setStep, answer, showResult, setShowR
             <TextInput
               value={totalInput} onChangeText={setTotalInput} keyboardType="numeric"
               onBlur={() => {
-                const n = parseInt(totalInput, 10);
-                if (n > 0) answer({ totalBudget: n }, 'budget');
+                const n = Number(totalInput.replace(',', '.'));
+                if (Number.isFinite(n)) answer({ totalBudget: n > 0 ? n : undefined }, 'budget');
               }}
               placeholder={d.qBudgetTotal} placeholderTextColor={colors.inkSoft}
               style={[st.input, { marginTop: 8 }]}
@@ -561,7 +621,7 @@ function VinFlow({ d, lang, answers, step, setStep, answer, showResult, setShowR
       )}
 
       {/* Goût — visible dès que le budget est choisi, ou si déjà prérempli (modifiable) */}
-      {(answers.budgetKey || answers.taste) && (step !== 'dish' && step !== 'budget' || answers.taste) && (
+      {(step === 'taste' || step === 'prep' || answers.taste) && (
         <View>
           <Bubble role="bot"><BubbleText>{d.qTaste}</BubbleText></Bubble>
           <View style={st.chipRow}>
@@ -600,8 +660,8 @@ function VinFlow({ d, lang, answers, step, setStep, answer, showResult, setShowR
 
 /* ------------------------------- Flow visite ------------------------------ */
 
-function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, showQuote, setShowQuote }: any) {
-  const [sentQuote, setSentQuote] = useState(false);
+function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, showQuote, setShowQuote, guided }: any) {
+  const [quoteStatus, setQuoteStatus] = useState<'opened' | 'error' | null>(null);
   const [sending, setSending] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -623,10 +683,16 @@ function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, sh
     setSending(true);
     const subject = encodeURIComponent(lang === 'fr' ? 'Demande de devis — Les Amoureuses' : 'Quote request — Les Amoureuses');
     const body = encodeURIComponent(`${quoteBody()}\n\n— ${name} (${email})`);
-    // En préproduction cross-origin CF7 est bloqué (CORS) : repli mailto,
-    // identique au formulaire de privatisation du site.
-    window.location.href = `mailto:contact@lesamoureuses.wine?subject=${subject}&body=${body}`;
-    setSentQuote(true);
+    const url = `mailto:contact@lesamoureuses.wine?subject=${subject}&body=${body}`;
+    try {
+      if (Platform.OS === 'web') window.location.href = url;
+      else await Linking.openURL(url);
+      setQuoteStatus('opened');
+    } catch {
+      setQuoteStatus('error');
+    } finally {
+      setSending(false);
+    }
   };
 
   if (showQuote) {
@@ -638,20 +704,20 @@ function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, sh
           <TextInput value={name} onChangeText={setName} placeholder={d.yourName} placeholderTextColor={colors.inkSoft} style={[st.input, { marginTop: 10 }]} />
           <TextInput value={email} onChangeText={setEmail} placeholder={d.yourEmail} placeholderTextColor={colors.inkSoft} style={[st.input, { marginTop: 8 }]} autoCapitalize="none" keyboardType="email-address" />
         </View>
-        {sentQuote ? (
-          <Bubble role="bot"><BubbleText>{d.quoteSent}</BubbleText></Bubble>
-        ) : (
-          <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-            <CTAButton label={sending ? '…' : d.quoteSend} onPress={sendQuote} />
-            <CTAButton label={d.quoteEdit} primary={false} onPress={() => setShowQuote(false)} />
-          </View>
-        )}
+        {quoteStatus && <P>{quoteStatus === 'opened'
+          ? (lang === 'fr' ? 'Le brouillon n’est pas envoyé : vérifiez votre messagerie pour le relire et l’envoyer.' : 'The draft has not been sent: check your email app to review and send it.')
+          : 'contact@lesamoureuses.wine'}</P>}
+        <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
+          <CTAButton label={sending ? '…' : lang === 'fr' ? 'Ouvrir ma messagerie' : 'Open my email app'} onPress={sendQuote} />
+          <CTAButton label={d.quoteEdit} primary={false} onPress={() => { setQuoteStatus(null); setShowQuote(false); }} />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={{ gap: 18 }}>
+      {guided && <>
       <View>
         <Bubble role="bot"><BubbleText>{d.qParticipants}</BubbleText></Bubble>
         <View style={st.chipRow}>
@@ -664,7 +730,7 @@ function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, sh
         <Bubble role="bot"><BubbleText>{d.qDate}</BubbleText></Bubble>
         <TextInput
           value={dateInput} onChangeText={setDateInput}
-          onBlur={() => dateInput && setVanswers((v: VisitAnswers) => ({ ...v, day: v.day ?? dateInput }))}
+          onBlur={() => setVanswers((v: VisitAnswers) => ({ ...v, day: dateInput.trim() || undefined }))}
           placeholder={lang === 'fr' ? 'ex. samedi, ou 14 juin' : 'e.g. Saturday, or June 14'}
           placeholderTextColor={colors.inkSoft}
           style={[st.input, { marginTop: 8 }]}
@@ -679,6 +745,7 @@ function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, sh
           ))}
         </View>
       </View>
+      </>}
 
       {/* Résultats : activités */}
       {(vanswers.participants || vanswers.preference) && (
@@ -694,7 +761,7 @@ function VisitFlow({ d, lang, vanswers, setVanswers, dateInput, setDateInput, sh
                 {d.availUnknown}{vanswers.participants ? ' ' + d.groupNote(vanswers.participants) : ''}
               </Text>
               <View style={{ marginTop: 10 }}>
-                <EllohaButton widgetId={a.ellohaId} culture={lang === 'en' ? 'en-GB' : 'fr-FR'} />
+                <EllohaButton widgetId={a.ellohaId} culture={lang === 'en' ? 'en-GB' : 'fr-FR'} label={d.openCalendar} />
               </View>
             </View>
           ))}
@@ -723,12 +790,17 @@ const st = StyleSheet.create({
   masthead: { backgroundColor: colors.ink, padding: 22 },
   mastKicker: { color: '#e4c59c' },
   mastTitle: { color: colors.paper, fontSize: 40, lineHeight: 42 },
-  inputRow: { flexDirection: 'row', gap: 8, marginTop: 24, alignItems: 'center' },
+  chat: { gap: 12, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper, padding: 12 },
+  chatTabs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  quickQuestions: { gap: 6 },
+  thread: { maxHeight: 300, flexGrow: 0, backgroundColor: colors.cream },
+  threadContent: { gap: 8, padding: 8 },
+  inputRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   input: {
     flex: 1, minWidth: 0, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.paper,
     paddingVertical: 12, paddingHorizontal: 14, fontSize: 15, color: colors.ink, borderRadius: 2,
   },
-  sendBtn: { backgroundColor: colors.terra, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 2 },
+  sendBtn: { backgroundColor: colors.terra, minHeight: 44, justifyContent: 'center', paddingHorizontal: 10, borderRadius: 2 },
   sendText: { color: colors.paper, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase' },
   switchLink: { marginTop: 16, color: colors.terra, fontSize: 14, textDecorationLine: 'underline' },
   ack: { marginTop: 6, fontSize: 13, color: colors.inkSoft, fontStyle: 'italic' },

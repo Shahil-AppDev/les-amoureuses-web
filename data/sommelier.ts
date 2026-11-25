@@ -165,6 +165,8 @@ export interface SommelierAnswers {
   dish?: DishKey;
   dishDetail?: string;
   budgetKey?: string;
+  bottleMin?: number;
+  bottleMax?: number;
   totalBudget?: number;
   taste?: TasteKey;
   preparation?: string;
@@ -204,6 +206,7 @@ export function recommend(answers: SommelierAnswers, products: Product[]): { mai
     // accordé serait trompeur ; mieux vaut avouer qu'aucune cuvée ne convient.
     if (answers.dish && answers.dish !== 'autre' && !spec.dishes.includes(answers.dish)) continue;
     const price = priceOf(p);
+    if (price < (answers.bottleMin ?? 0) || price > (answers.bottleMax ?? Infinity)) continue;
     if (range) {
       if (price < range.min) continue;
       if (range.max != null && price > range.max) continue;
