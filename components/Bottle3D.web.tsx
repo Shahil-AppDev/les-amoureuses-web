@@ -126,12 +126,15 @@ export default function Bottle3D({ image, label = 'Cuvée « A »', interactive 
         style={{ background: 'transparent' }}
         gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
       >
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[4, 5, 4]} intensity={1.4} color="#fff2dd" />
+        <ambientLight intensity={0.45} />
+        <directionalLight position={[4, 5, 4]} intensity={1.6} color="#fff2dd" />
         <directionalLight position={[-4, 2, -2]} intensity={0.5} color="#d8e2ff" />
+        {/* rim light doré : contour premium sur fond sombre */}
+        <spotLight position={[-3, 3, -4]} intensity={2.2} color="#B9975B" angle={0.7} penumbra={0.8} />
+        <pointLight position={[2.5, -0.5, 3]} intensity={0.5} color="#ffdf9e" />
         <Suspense fallback={null}>
           <Bottle label={label} spin={spin && !interactive} />
-          <ContactShadows position={[0, -1.28, 0]} opacity={0.35} scale={5} blur={2.4} />
+          <ContactShadows position={[0, -1.28, 0]} opacity={0.55} scale={5.5} blur={2.8} color="#0a0502" />
           {interactive && <OrbitControls enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 3} maxPolarAngle={Math.PI / 1.9} />}
         </Suspense>
       </Canvas>
