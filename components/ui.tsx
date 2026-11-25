@@ -2,6 +2,7 @@ import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle, type TextStyle } from 'react-native';
 import { Link } from 'expo-router';
 import { colors, fonts } from '../constants/theme';
+import { Hoverable } from './motionfx';
 
 const webFont = (stack: string) => (Platform.OS === 'web' ? { fontFamily: stack } : {});
 
@@ -22,25 +23,30 @@ export function Section({ children, style }: { children: React.ReactNode; style?
   return <View style={[styles.section, style]}>{children}</View>;
 }
 
-export function CTAButton({ href, label, primary = true, onPress, style }: {
+export function CTAButton({ href, label, primary = true, onPress, style, inverted = false }: {
   href?: string; label: string; primary?: boolean;
-  onPress?: () => void; style?: StyleProp<ViewStyle>;
+  onPress?: () => void; style?: StyleProp<ViewStyle>; inverted?: boolean;
 }) {
   const inner = (
-    <Text style={[styles.ctaText, !primary && styles.ctaTextGhost, webFont(fonts.bodyWeb)]}>{label}</Text>
+    <Text style={[styles.ctaText, !primary && styles.ctaTextGhost, !primary && inverted && styles.ctaTextGhostLight, webFont(fonts.bodyWeb)]}>{label}</Text>
   );
   // StyleSheet.flatten requis : à l'intérieur d'un <Link asChild>, Radix Slot
   // fusionne les styles par spread — un tableau deviendrait {0:..,1:..} et ferait
   // planter React DOM (CSSStyleDeclaration indexed setter).
-  const box = StyleSheet.flatten([styles.cta, primary ? styles.ctaPrimary : styles.ctaGhost, style]);
-  if (href) {
-    return (
-      <Link href={href as any} asChild>
-        <Pressable style={box}>{inner}</Pressable>
-      </Link>
-    );
-  }
-  return <Pressable onPress={onPress} style={box}>{inner}</Pressable>;
+  const box = StyleSheet.flatten([
+    styles.cta,
+    primary ? styles.ctaPrimary : styles.ctaGhost,
+    !primary && inverted && styles.ctaGhostLight,
+    style,
+  ]);
+  const btn = href ? (
+    <Link href={href as any} asChild>
+      <Pressable style={box}>{inner}</Pressable>
+    </Link>
+  ) : (
+    <Pressable onPress={onPress} style={box}>{inner}</Pressable>
+  );
+  return <Hoverable scale={1.035} lift={3} style={{ alignSelf: 'flex-start' } as any}>{btn}</Hoverable>;
 }
 
 export const styles = StyleSheet.create({
@@ -52,6 +58,8 @@ export const styles = StyleSheet.create({
   cta: { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 2, alignSelf: 'flex-start' },
   ctaPrimary: { backgroundColor: colors.terra },
   ctaGhost: { borderWidth: 1, borderColor: colors.ink },
+  ctaGhostLight: { borderColor: 'rgba(245,239,228,0.55)' },
   ctaText: { color: colors.paper, fontSize: 15, letterSpacing: 1, textTransform: 'uppercase' },
   ctaTextGhost: { color: colors.ink },
+  ctaTextGhostLight: { color: colors.cream },
 });

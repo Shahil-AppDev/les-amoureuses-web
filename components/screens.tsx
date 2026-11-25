@@ -20,6 +20,7 @@ import { EllohaButton } from './EllohaWidget';
 import { ACTIVITIES } from '../data/visites';
 import { HtmlContent } from './HtmlContent';
 import Bottle3D from './Bottle3D';
+import { Enter, Float, GlowPulse, HeroBackdrop, Hoverable, Reveal, StaggerLine } from './motionfx';
 
 const serif = Platform.OS === 'web' ? { fontFamily: fonts.displayWeb } : {};
 const FLAGSHIP = 'cuvee-a';
@@ -50,41 +51,68 @@ export function HomeScreen({ lang }: { lang: Lang }) {
           address: { '@type': 'PostalAddress', streetAddress: '1429 Chemin de Vinsas', postalCode: '07700', addressLocality: 'Bourg-Saint-Andéol', addressCountry: 'FR' },
         }}
       />
-      {/* Hero : bouteille 3D + titre + CTA */}
-      <View style={[styles.hero, { flexDirection: wide ? 'row' : 'column' }]}>
-        <View style={[styles.heroText, !wide && { paddingTop: 32 }]}>
-          <Eyebrow>{d.heroSub}</Eyebrow>
-          <H1>{d.heroTitle}</H1>
-          <P style={{ marginTop: 16, maxWidth: 520 }}>{d.heroText}</P>
-          <View style={styles.ctaRow}>
-            <CTAButton href={r.shop} label={d.ctaWines} />
-            <CTAButton href={r.oeno} label={d.ctaVisit} primary={false} />
+      {/* Hero : fond encre→bordeaux, titre cinématique, bouteille 3D en lévitation */}
+      <View style={styles.heroDark}>
+        <HeroBackdrop />
+        <View style={[styles.heroInner, { flexDirection: wide ? 'row' : 'column' }]}>
+          <View style={[styles.heroText, !wide && { paddingTop: 40 }]}>
+            <StaggerLine index={0}>
+              <Eyebrow style={{ color: colors.gold, letterSpacing: 4 }}>{d.heroSub}</Eyebrow>
+            </StaggerLine>
+            <StaggerLine index={1}>
+              <H1 style={[styles.heroTitle, { fontSize: wide ? 76 : 44, lineHeight: wide ? 80 : 48 }]}>{d.heroTitle}</H1>
+            </StaggerLine>
+            <StaggerLine index={2}>
+              <P style={{ marginTop: 18, maxWidth: 520, color: 'rgba(245,239,228,0.82)', fontSize: 17, lineHeight: 28 }}>{d.heroText}</P>
+            </StaggerLine>
+            <StaggerLine index={3}>
+              <View style={styles.ctaRow}>
+                <CTAButton href={r.shop} label={d.ctaWines} />
+                <CTAButton href={r.oeno} label={d.ctaVisit} primary={false} inverted />
+              </View>
+            </StaggerLine>
           </View>
-        </View>
-        <View style={[styles.heroBottle, { height: wide ? 560 : 420 }]}>
-          {Platform.OS === 'web' ? (
-            <Bottle3D image={flagship.image} label="Cuvée « A »" interactive />
-          ) : (
-            flagship.image && <Image source={{ uri: flagship.image }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
-          )}
+          <View style={[styles.heroBottle, { height: wide ? 600 : 440 }]}>
+            <Enter delay={0.5} y={0} duration={1.4} style={{ width: '100%', height: '100%' }}>
+              <View style={{ width: '100%', height: '100%' }}>
+                <View style={styles.heroMedalWrap} pointerEvents="none">
+                  <GlowPulse />
+                  <Image source={require('../assets/images/medallion.png')} style={styles.heroMedal} resizeMode="contain" />
+                </View>
+                <Float amplitude={12} duration={6} style={{ width: '100%', height: '100%' }}>
+                  {Platform.OS === 'web' ? (
+                    <Bottle3D image={flagship.image} label="Cuvée « A »" interactive />
+                  ) : (
+                    flagship.image && <Image source={{ uri: flagship.image }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                  )}
+                </Float>
+              </View>
+            </Enter>
+          </View>
         </View>
       </View>
 
       {/* Gammes */}
       <Section>
-        <Eyebrow>{d.ranges}</Eyebrow>
+        <Reveal>
+          <Eyebrow>{d.ranges}</Eyebrow>
+        </Reveal>
         <View style={styles.rangeRow}>
           {[
             { name: d.rangeTerres, href: r.r1, img: PRODUCTS.find(p => p.slug === 'cuvee-a')?.image },
             { name: d.rangeLiby, href: r.r2, img: PRODUCTS.find(p => p.slug === 'le-liby-rouge')?.image },
             { name: d.rangeChateau, href: r.r3, img: PRODUCTS.find(p => p.slug === 'promenade')?.image },
-          ].map((g) => (
-            <Link key={g.href} href={g.href as any} asChild>
-              <Pressable style={styles.rangeCard}>
-                {g.img && <Image source={{ uri: g.img }} style={styles.rangeImg} resizeMode="contain" />}
-                <Text style={[styles.rangeName, serif]}>{g.name}</Text>
-              </Pressable>
-            </Link>
+          ].map((g, i) => (
+            <Reveal key={g.href} delay={i * 0.12}>
+              <Hoverable scale={1.02} lift={6}>
+                <Link href={g.href as any} asChild>
+                  <Pressable style={styles.rangeCard}>
+                    {g.img && <Image source={{ uri: g.img }} style={styles.rangeImg} resizeMode="contain" />}
+                    <Text style={[styles.rangeName, serif]}>{g.name}</Text>
+                  </Pressable>
+                </Link>
+              </Hoverable>
+            </Reveal>
           ))}
         </View>
       </Section>
@@ -92,21 +120,27 @@ export function HomeScreen({ lang }: { lang: Lang }) {
       {/* Sommelier virtuel : deux entrées */}
       <Section style={{ backgroundColor: colors.paper, maxWidth: '100%' }}>
         <View style={{ maxWidth: 1080, width: '100%', alignSelf: 'center' }}>
-          <Eyebrow>{lang === 'fr' ? 'Assistant' : 'Assistant'}</Eyebrow>
-          <H2>{d.homeAssTitle}</H2>
-          <P style={{ marginTop: 10, maxWidth: 620 }}>{d.homeAssText}</P>
+          <Reveal>
+            <Eyebrow>{lang === 'fr' ? 'Assistant' : 'Assistant'}</Eyebrow>
+            <H2>{d.homeAssTitle}</H2>
+            <P style={{ marginTop: 10, maxWidth: 620 }}>{d.homeAssText}</P>
+          </Reveal>
           <View style={[styles.rangeRow, { marginTop: 20 }]}>
             {[
               { title: d.homeAssVin, text: d.homeAssVinText, href: r.sommelier },
               { title: d.homeAssVisit, text: d.homeAssVisitText, href: r.visit },
-            ].map((c) => (
-              <Link key={c.href} href={c.href as any} asChild>
-                <Pressable style={styles.assCard}>
-                  <Text style={[styles.assTitle, serif]}>{c.title}</Text>
-                  <P style={{ fontSize: 14, marginTop: 6 }}>{c.text}</P>
-                  <Text style={styles.assGo}>→</Text>
-                </Pressable>
-              </Link>
+            ].map((c, i) => (
+              <Reveal key={c.href} delay={0.1 + i * 0.12}>
+                <Hoverable scale={1.02} lift={6}>
+                  <Link href={c.href as any} asChild>
+                    <Pressable style={styles.assCard}>
+                      <Text style={[styles.assTitle, serif]}>{c.title}</Text>
+                      <P style={{ fontSize: 14, marginTop: 6 }}>{c.text}</P>
+                      <Text style={styles.assGo}>→</Text>
+                    </Pressable>
+                  </Link>
+                </Hoverable>
+              </Reveal>
             ))}
           </View>
         </View>
@@ -127,9 +161,11 @@ function Band({ title, text, cta, href, dark }: { title: string; text: string; c
   return (
     <View style={[styles.band, dark && { backgroundColor: colors.ink }]}>
       <Section>
-        <H2 style={dark && { color: colors.paper }}>{title}</H2>
-        <P style={[{ marginVertical: 14, maxWidth: 640 }, dark && { color: '#CBBFA8' }]}>{text}</P>
-        <CTAButton href={href} label={cta} primary={!dark} />
+        <Reveal>
+          <H2 style={dark && { color: colors.paper }}>{title}</H2>
+          <P style={[{ marginVertical: 14, maxWidth: 640 }, dark && { color: '#CBBFA8' }]}>{text}</P>
+          <CTAButton href={href} label={cta} primary={!dark} inverted={dark ? true : false} />
+        </Reveal>
       </Section>
     </View>
   );
@@ -694,6 +730,11 @@ export function PostScreen({ slug, lang }: { slug: string; lang: Lang }) {
 
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 20 },
+  heroDark: { width: '100%', backgroundColor: '#171008', position: 'relative', overflow: 'hidden' },
+  heroInner: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 24, maxWidth: 1240, width: '100%', alignSelf: 'center' },
+  heroTitle: { color: colors.cream, letterSpacing: 0.5 },
+  heroMedalWrap: { position: 'absolute', top: '6%', left: '12%', width: '76%', height: '88%', opacity: 0.16 },
+  heroMedal: { width: '100%', height: '100%' },
   heroText: { flex: 1, maxWidth: 560 },
   heroBottle: { flex: 1, width: '100%', maxWidth: 480 },
   ctaRow: { flexDirection: 'row', gap: 14, marginTop: 24, flexWrap: 'wrap' },

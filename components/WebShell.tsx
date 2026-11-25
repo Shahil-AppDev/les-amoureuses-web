@@ -6,6 +6,7 @@ import { t } from '../lib/i18n';
 import { useApp } from '../context/AppContext';
 import { useCart } from '../context/CartContext';
 import { AgeGate } from './AgeGate';
+import { MotionRoot } from './motionfx';
 import type { Lang } from '../lib/types';
 
 const ROUTES = {
@@ -94,6 +95,7 @@ export function WebShell({ children, lang }: { children: React.ReactNode; lang: 
   ];
 
   return (
+    <MotionRoot>
     <View style={styles.root}>
       <View style={styles.header}>
         <Logo lang={lang} />
@@ -146,6 +148,7 @@ export function WebShell({ children, lang }: { children: React.ReactNode; lang: 
       </ScrollView>
       <AgeGate />
     </View>
+    </MotionRoot>
   );
 }
 
@@ -155,9 +158,9 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingVertical: 14, backgroundColor: colors.paper,
+    paddingHorizontal: 24, paddingVertical: 14, backgroundColor: isWeb ? 'rgba(251,247,239,0.86)' : colors.paper,
     borderBottomWidth: 1, borderBottomColor: colors.line,
-    ...(isWeb ? ({ position: 'sticky', top: 0, zIndex: 50 } as any) : {}),
+    ...(isWeb ? ({ position: 'sticky', top: 0, zIndex: 50, backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)' } as any) : {}),
   },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logoMark: { width: 46, height: 46 },
